@@ -14,6 +14,11 @@
 
 #include "include/cef_print_handler.h"
 
+// Compatibility fix for CEF 123+
+#ifndef OVERRIDE
+#define OVERRIDE override
+#endif
+
 class ClientPrintHandlerGtk : public CefPrintHandler {
  public:
   ClientPrintHandlerGtk();
@@ -32,7 +37,8 @@ class ClientPrintHandlerGtk : public CefPrintHandler {
                   const CefString& pdf_file_path,
                   CefRefPtr<CefPrintJobCallback> callback) OVERRIDE;
   void OnPrintReset(CefRefPtr<CefBrowser> browser) OVERRIDE;
-  CefSize GetPdfPaperSize(int device_units_per_inch) OVERRIDE;
+  CefSize GetPdfPaperSize(CefRefPtr<CefBrowser> browser,
+                          int device_units_per_inch) OVERRIDE;
 
  private:
   // Print handler.

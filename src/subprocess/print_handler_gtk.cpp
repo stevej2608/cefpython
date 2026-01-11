@@ -491,13 +491,13 @@ struct ClientPrintHandlerGtk::PrintHandler {
         settings->SetSelectionOnly(print_selection_only);
         InitPrintSettings(gtk_settings_, page_setup_, settings);
         dialog_callback_->Continue(settings);
-        dialog_callback_ = NULL;
+        dialog_callback_ = nullptr;
         return;
       }
       case GTK_RESPONSE_DELETE_EVENT:  // Fall through.
       case GTK_RESPONSE_CANCEL: {
         dialog_callback_->Cancel();
-        dialog_callback_ = NULL;
+        dialog_callback_ = nullptr;
         return;
       }
       case GTK_RESPONSE_APPLY:
@@ -509,9 +509,18 @@ struct ClientPrintHandlerGtk::PrintHandler {
     // Continue() will result in a call to ClientPrintHandlerGtk::OnPrintReset
     // which deletes |this|. Execute it asnychronously so the call stack has a
     // chance to unwind.
-    CefPostTask(TID_UI, base::Bind(&CefPrintJobCallback::Continue,
-                                   job_callback_.get()));
-    job_callback_ = NULL;
+    // CEF 123+ removed base::Bind, create a simple task wrapper
+    class ContinueTask : public CefTask {
+     public:
+      explicit ContinueTask(CefRefPtr<CefPrintJobCallback> callback)
+          : callback_(callback) {}
+      void Execute() override { callback_->Continue(); }
+     private:
+      CefRefPtr<CefPrintJobCallback> callback_;
+      IMPLEMENT_REFCOUNTING(ContinueTask);
+    };
+    CefPostTask(TID_UI, new ContinueTask(job_callback_));
+    job_callback_ = nullptr;
   }
 
   static void OnDialogResponseThunk(GtkDialog* dialog,
@@ -599,7 +608,8 @@ void ClientPrintHandlerGtk::OnPrintReset(CefRefPtr<CefBrowser> browser) {
   print_handler_map_.erase(it);
 }
 
-CefSize ClientPrintHandlerGtk::GetPdfPaperSize(int device_units_per_inch) {
+CefSize ClientPrintHandlerGtk::GetPdfPaperSize(CefRefPtr<CefBrowser> browser,
+                                                int device_units_per_inch) {
   CEF_REQUIRE_UI_THREAD();
 
   GtkPageSetup* page_setup = gtk_page_setup_new();

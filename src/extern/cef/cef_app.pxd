@@ -37,4 +37,5 @@ cdef extern from "include/cef_app.h":
     cdef void CefDoMessageLoopWork() nogil
     cdef void CefQuitMessageLoop() nogil
     cdef void CefShutdown() nogil
-    cdef void CefSetOSModalLoop(cpp_bool osModalLoop) nogil
+    # CefSetOSModalLoop was removed in CEF 123+
+    # cdef void CefSetOSModalLoop(cpp_bool osModalLoop) nogil

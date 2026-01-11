@@ -204,13 +204,13 @@ def set_compiler_options(options):
 
         extra_compile_args.extend([
                 "-DNDEBUG",
-                "-std=gnu++11",
+                "-std=gnu++17",
         ])
 
     if LINUX:
         os.environ["CC"] = "g++"
         os.environ["CXX"] = "g++"
-        extra_compile_args.extend(["-std=gnu++11"])
+        extra_compile_args.extend(["-std=gnu++17"])
 
         # Fix "ImportError ... undefined symbol ..." caused by CEF's
         # include/base/ headers by adding the -flto flag (Issue #230).

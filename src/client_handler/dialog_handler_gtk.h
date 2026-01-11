@@ -14,6 +14,11 @@
 #include "include/cef_dialog_handler.h"
 #include "include/cef_jsdialog_handler.h"
 
+// Compatibility fix for CEF 123+
+#ifndef OVERRIDE
+#define OVERRIDE override
+#endif
+
 class ClientDialogHandlerGtk : public CefDialogHandler,
                                public CefJSDialogHandler {
  public:
@@ -25,7 +30,6 @@ class ClientDialogHandlerGtk : public CefDialogHandler,
                     const CefString& title,
                     const CefString& default_file_path,
                     const std::vector<CefString>& accept_filters,
-                    int selected_accept_filter,
                     CefRefPtr<CefFileDialogCallback> callback) OVERRIDE;
 
   // CefJSDialogHandler methods.

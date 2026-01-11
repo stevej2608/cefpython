@@ -471,13 +471,16 @@ def Initialize(applicationSettings=None, commandLineSwitches=None, **kwargs):
 
     IF UNAME_SYSNAME == "Linux":
         # Fix Issue #231 - Discovery of the "icudtl.dat" file fails on Linux.
-        cdef str py_module_dir = GetModuleDirectory()
-        cdef CefString cef_module_dir
-        PyToCefString(py_module_dir, cef_module_dir)
-        CefOverridePath(PK_DIR_EXE, cef_module_dir)\
-                or Debug("ERROR: CefOverridePath failed")
-        CefOverridePath(PK_DIR_MODULE, cef_module_dir)\
-                or Debug("ERROR: CefOverridePath failed")
+        # NOTE: CefOverridePath was removed in CEF 123+. Resource paths should be
+        # configured through CefSettings or proper directory structure.
+        pass
+        # cdef str py_module_dir = GetModuleDirectory()
+        # cdef CefString cef_module_dir
+        # PyToCefString(py_module_dir, cef_module_dir)
+        # CefOverridePath(PK_DIR_EXE, cef_module_dir)\
+        #         or Debug("ERROR: CefOverridePath failed")
+        # CefOverridePath(PK_DIR_MODULE, cef_module_dir)\
+        #         or Debug("ERROR: CefOverridePath failed")
     # END IF UNAME_SYSNAME == "Linux":
 
     if not application_settings:
@@ -957,9 +960,12 @@ def Shutdown():
         MacShutdown()
 
 def SetOsModalLoop(py_bool modalLoop):
-    cdef cpp_bool cefModalLoop = bool(modalLoop)
-    with nogil:
-        CefSetOSModalLoop(cefModalLoop)
+    # CEF 123+ removed CefSetOSModalLoop - this is now a no-op
+    # Modal loop handling is managed internally by CEF
+    pass
+    # cdef cpp_bool cefModalLoop = bool(modalLoop)
+    # with nogil:
+    #     CefSetOSModalLoop(cefModalLoop)
 
 cpdef py_void SetGlobalClientCallback(py_string name, object callback):
     global g_globalClientCallbacks

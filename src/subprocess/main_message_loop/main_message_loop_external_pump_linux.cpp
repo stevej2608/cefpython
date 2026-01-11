@@ -9,11 +9,25 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <math.h>
+#include <memory>
+#include <cstdint>
 
 #include <glib.h>
 
 #include "include/base/cef_logging.h"
 #include "include/cef_app.h"
+
+// CEF 123+ compatibility fixes
+#ifndef OVERRIDE
+#define OVERRIDE override
+#endif
+
+// int64 was renamed to int64_t in CEF 123+
+typedef int64_t int64;
+
+// scoped_ptr was replaced with std::unique_ptr in CEF 123+
+template<typename T>
+using scoped_ptr = std::unique_ptr<T>;
 
 // From base/posix/eintr_wrapper.h.
 // This provides a wrapper around system calls which may be interrupted by a
