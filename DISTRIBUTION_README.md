@@ -312,7 +312,7 @@ md5sum dist/cefpython3-123.0.tar.gz
 
 ## Next Steps
 
-1. Install the package: `pip install dist/cefpython3-123.0-py3-none-manylinux1_x86_64.whl`
+1. Install the package: `pip install cefpython3-123.0-py3-none-manylinux1_x86_64.whl`
 2. Try the hello world example: `python -c "from cefpython3.examples import hello_world; hello_world.main()"`
 3. Explore the examples directory
 4. Read the API documentation

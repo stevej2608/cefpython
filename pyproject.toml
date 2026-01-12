@@ -1,0 +1,223 @@
+[build-system]
+requires = [
+    "hatchling",
+    "hatch-cython>=0.5.0",
+    "cython>=3.0.12,<4.0",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "cefpython3"
+version = "123.0"
+description = "Python bindings for the Chromium Embedded Framework (CEF)"
+readme = "DISTRIBUTION_README.md"
+license = {file = "License"}
+authors = [
+    {name = "Czarek Tomczak", email = "czarek.tomczak@gmail.com"},
+]
+maintainers = [
+    {name = "CEF Python Contributors"},
+]
+keywords = [
+    "chromium",
+    "cef",
+    "browser",
+    "embedded",
+    "webkit",
+    "gui",
+    "web",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Cython",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: User Interfaces",
+    "Topic :: Internet :: WWW/HTTP :: Browsers",
+]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pillow>=9.0",
+]
+examples = [
+    "pillow>=9.0",  # For screenshot example
+]
+
+[project.urls]
+Homepage = "https://github.com/cztomczak/cefpython"
+Documentation = "https://github.com/cztomczak/cefpython/blob/master/docs/README.md"
+Repository = "https://github.com/cztomczak/cefpython"
+Issues = "https://github.com/cztomczak/cefpython/issues"
+Changelog = "https://github.com/cztomczak/cefpython/blob/master/CHANGELOG.md"
+
+# Version is statically defined in [project] section above
+
+# NOTE: Custom build hook is available in hatch_build.py but not enabled by default
+# To use it, add this to your local configuration:
+# [tool.hatch.build]
+# hooks.custom.path = "hatch_build.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["build/cefpython3_123.0_linux64/cefpython3"]
+# Include all binary files
+include = [
+    "cefpython3/*.so",
+    "cefpython3/subprocess",
+    "cefpython3/libcef.so",
+    "cefpython3/lib*.so*",
+    "cefpython3/*.pak",
+    "cefpython3/*.bin",
+    "cefpython3/*.dat",
+    "cefpython3/*.json",
+    "cefpython3/locales/*.pak",
+    "cefpython3/chrome-sandbox",
+    "cefpython3/examples/**/*",
+    "cefpython3/*.txt",
+]
+
+[tool.hatch.build.targets.wheel.force-include]
+"build/cefpython3_123.0_linux64/cefpython3" = "cefpython3"
+"build/cefpython3_123.0_linux64/examples" = "cefpython3/examples"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tools",
+    "/examples",
+    "/License",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/CEF123_LINUX_UPGRADE.md",
+    "/DISTRIBUTION_README.md",
+    "/pyproject.toml",
+    "/hatch_build.py",
+]
+
+[tool.hatch.envs.default]
+dependencies = [
+    "pytest>=7.0",
+    "pillow>=9.0",
+]
+
+[tool.hatch.envs.default.scripts]
+# Build C++ libraries and Cython extension
+build-cpp = "python tools/build.py 123.0 --fast"
+# Run unit tests
+test = "pytest unittests/ -v"
+# Run examples
+example-hello = "python -c 'from cefpython3.examples import hello_world; hello_world.main()'"
+# Clean build artifacts
+clean = "rm -rf build/build_cefpython build/temp.* dist/ *.egg-info && find . -type d -name __pycache__ -delete 2>/dev/null ; find . -type f -name '*.pyc' -delete ; find . -type f -name '*.pyo' -delete"
+
+[tool.hatch.envs.build]
+description = "Environment for building the complete package"
+detached = true
+dependencies = [
+    "cython>=3.0.12,<4.0",
+    "pillow>=9.0",
+]
+
+[tool.hatch.envs.build.scripts]
+# Complete build process
+all = [
+    "setup-cef",
+    "build-libs",
+    "build-wheel",
+    "checksums",
+]
+# Download and setup CEF binaries if not present
+setup-cef = """
+if [ ! -d "build/cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64" ]; then
+    echo "CEF binaries not found. Downloading..."
+    mkdir -p build
+    cd build
+    curl -L -o cef_binary_linux64.tar.bz2 https://cef-builds.spotifycdn.com/cef_binary_123.0.7%2Bg6a21509%2Bchromium-123.0.6312.46_linux64.tar.bz2
+    tar -xjf cef_binary_linux64.tar.bz2
+    mv cef_binary_123.0.7+g6a21509+chromium-123.0.6312.46_linux64 cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64
+    cd cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64
+    mkdir -p build && cd build
+    cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+    ninja libcef_dll_wrapper
+    touch ../lib/README.txt ../lib/LICENSE.txt
+    cd ../../..
+    echo "CEF binaries setup complete"
+else
+    echo "CEF binaries already present"
+fi
+"""
+# Build C++ libraries
+build-libs = """
+export CEF_CCFLAGS="-std=gnu++17 -DNDEBUG -Wall -Werror -Wno-deprecated-declarations -O3"
+export PYTHON_INCLUDE="$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')"
+export CEF_BIN="build/cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64/bin"
+export CEF_LIB="build/cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64/lib"
+make -C src/client_handler
+make -C src/subprocess -f Makefile-libcefpythonapp
+make -C src/subprocess
+make -C src/cpp_utils
+"""
+# Build Cython extension and create wheel
+build-wheel = """
+python tools/make_installer.py 123.0
+cd build/cefpython3_123.0_linux64
+python setup.py bdist_wheel
+cp dist/*.whl ../../dist/
+"""
+# Generate checksums
+checksums = """
+cd dist
+sha256sum *.whl > SHA256SUMS 2>/dev/null || true
+md5sum *.whl > MD5SUMS 2>/dev/null || true
+"""
+
+[tool.hatch.envs.test]
+dependencies = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[tool.hatch.envs.test.scripts]
+run = "pytest unittests/ -v"
+cov = "pytest unittests/ --cov=cefpython3 --cov-report=html --cov-report=term"
+
+[tool.cython]
+# Cython compiler directives
+compiler_directives = { language_level = "3", embedsignature = true }
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["unittests"]
+python_files = ["*_test.py", "test_*.py"]
+addopts = "-ra -q"
+
+# Hatch metadata
+[tool.hatch.metadata]
+allow-direct-references = true
+
+# Build configuration for different Python versions
+[tool.hatch.build.targets.wheel.hooks.cython]
+dependencies = ["hatch-cython"]
+
+[tool.hatch.build.targets.wheel.hooks.cython.options]
+# Compile Cython extensions
+compile_py = false
+include_numpy = false
+directives = { language_level = "3", embedsignature = true }
+
+# Platform-specific settings
+[tool.hatch.envs.build.env-vars]
+CFLAGS = "-std=gnu++17 -O3 -DNDEBUG"
+CXXFLAGS = "-std=gnu++17 -O3 -DNDEBUG"
+LDFLAGS = "-flto"
