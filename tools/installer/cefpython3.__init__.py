@@ -84,3 +84,23 @@ elif sys.version_info[:2] == (3, 13):
     from . import cefpython_py313 as cefpython
 else:
     raise Exception("Python version not supported: " + sys.version)
+
+# Monkey-patch Initialize() to automatically set resource paths if not provided
+_original_Initialize = cefpython.Initialize
+
+def _patched_Initialize(settings=None, switches=None):
+    """Initialize CEF with automatic resource path detection."""
+    if settings is None:
+        settings = {}
+
+    # Auto-detect resource paths if not explicitly provided
+    if 'resources_dir_path' not in settings:
+        settings['resources_dir_path'] = package_dir
+    if 'locales_dir_path' not in settings:
+        settings['locales_dir_path'] = os.path.join(package_dir, 'locales')
+    if 'browser_subprocess_path' not in settings:
+        settings['browser_subprocess_path'] = os.path.join(package_dir, 'subprocess')
+
+    return _original_Initialize(settings, switches)
+
+cefpython.Initialize = _patched_Initialize
