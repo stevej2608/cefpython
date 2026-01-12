@@ -151,10 +151,26 @@ if [ ! -d "build/cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64" ]; then
     cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
     ninja libcef_dll_wrapper
     touch ../lib/README.txt ../lib/LICENSE.txt
-    cd ../../..
+    cd ..
+    # Copy Release files to bin directory for compatibility with make_installer.py
+    if [ ! -d "bin" ]; then
+        mkdir -p bin
+        cp -r Release/* bin/
+        # Also copy Resources (pak files, locales, icudtl.dat)
+        cp -r Resources/* bin/
+    fi
+    cd ../..
     echo "CEF binaries setup complete"
 else
     echo "CEF binaries already present"
+    # Ensure bin directory exists with files from Release and Resources
+    cd build/cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64
+    if [ ! -d "bin" ]; then
+        mkdir -p bin
+        cp -r Release/* bin/
+        cp -r Resources/* bin/
+    fi
+    cd ../..
 fi
 """
 # Build C++ libraries
@@ -170,9 +186,15 @@ make -C src/cpp_utils
 """
 # Build Cython extension and create wheel
 build-wheel = """
-python tools/make_installer.py 123.0
-cd build/cefpython3_123.0_linux64
-python setup.py bdist_wheel
+python tools/make_installer.py 123.0 && \
+cd build/cefpython3_123.0_linux64 && \
+echo "Stripping debug symbols from binaries to reduce package size..." && \
+strip --strip-unneeded cefpython3/lib*.so* && \
+strip --strip-unneeded cefpython3/subprocess && \
+strip --strip-unneeded cefpython3/chrome-sandbox && \
+echo "Stripped binaries. Package size should be significantly reduced." && \
+ls -lh cefpython3/libcef.so && \
+python setup.py bdist_wheel && \
 cp dist/*.whl ../../dist/
 """
 # Generate checksums
