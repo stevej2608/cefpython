@@ -16,6 +16,15 @@ from typing import Any, Dict
 
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
+# Import platform detection from tools/common.py
+sys.path.insert(0, str(Path(__file__).parent / "tools"))
+from common import (
+    WINDOWS, MAC, LINUX,
+    OS_POSTFIX2, CEF_POSTFIX2,
+    get_cefpython_version,
+    MODULE_EXT
+)
+
 
 class CefPythonBuildHook(BuildHookInterface):
     """Custom build hook for CEF Python."""
@@ -27,6 +36,30 @@ class CefPythonBuildHook(BuildHookInterface):
         self.build_dir = Path(self.root) / "build"
         self.src_dir = Path(self.root) / "src"
         self.version = "123.0"
+
+    def _detect_cef_directory(self) -> Path:
+        """Detect CEF binaries directory dynamically based on platform."""
+        version_info = get_cefpython_version()
+        cef_version = version_info["CEF_VERSION"]
+        chrome_major = version_info["CHROME_VERSION_MAJOR"]
+
+        # Pattern: cef123_123.0.7+g6a21509+chromium-123.0.6312.46_{platform}
+        basename = f"cef{chrome_major}_{cef_version}_{CEF_POSTFIX2}"
+        cef_dir = self.build_dir / basename
+
+        if not cef_dir.exists():
+            # Try glob pattern for any CEF directory matching major version
+            pattern = f"cef{chrome_major}_*_{CEF_POSTFIX2}"
+            matches = list(self.build_dir.glob(pattern))
+            if matches:
+                cef_dir = matches[0]
+            else:
+                raise RuntimeError(
+                    f"CEF binaries not found. Expected: {cef_dir}\n"
+                    f"Run: hatch run build:setup-cef"
+                )
+
+        return cef_dir
 
     def initialize(self, version: str, build_data: Dict[str, Any]) -> None:
         """Initialize the build process."""
@@ -40,19 +73,37 @@ class CefPythonBuildHook(BuildHookInterface):
         self._create_installer_package()
 
     def _build_native_libraries(self) -> None:
-        """Build all C++ libraries."""
+        """Build all C++ libraries using platform-specific methods."""
         self.app.display_info("Building C++ libraries...")
 
-        # Set up environment variables
+        cef_dir = self._detect_cef_directory()
+
+        if WINDOWS:
+            self._build_cpp_windows(cef_dir)
+        elif MAC or LINUX:
+            self._build_cpp_unix(cef_dir)
+        else:
+            raise RuntimeError(f"Unsupported platform: {OS_POSTFIX2}")
+
+        self.app.display_success("C++ libraries built successfully")
+
+    def _build_cpp_unix(self, cef_dir: Path) -> None:
+        """Build C++ projects using makefiles (Linux/Mac)."""
         env = os.environ.copy()
         env.update({
-            "CEF_CCFLAGS": "-std=gnu++17 -DNDEBUG -Wall -Werror -Wno-deprecated-declarations -O3",
+            "CEF_CCFLAGS": self._get_cef_ccflags(),
             "PYTHON_INCLUDE": self._get_python_include(),
-            "CEF_BIN": str(self.build_dir / "cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64/bin"),
-            "CEF_LIB": str(self.build_dir / "cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64/lib"),
+            "CEF_BIN": str(cef_dir / "bin"),
+            "CEF_LIB": str(cef_dir / "lib"),
         })
 
-        # Build each C++ project
+        # Add Mac-specific environment variables
+        if MAC:
+            env["CC"] = "c++"
+            env["CXX"] = "c++"
+            env["ARCHFLAGS"] = "-arch x86_64"
+            env["PATH"] = "/usr/local/bin:" + env.get("PATH", "")
+
         projects = [
             ("client_handler", "src/client_handler", "Makefile"),
             ("libcefpythonapp", "src/subprocess", "Makefile-libcefpythonapp"),
@@ -61,26 +112,57 @@ class CefPythonBuildHook(BuildHookInterface):
         ]
 
         for name, directory, makefile in projects:
-            self.app.display_info(f"Building {name}...")
-            project_dir = Path(self.root) / directory
+            self._run_make(name, directory, makefile, env)
 
-            cmd = ["make", "-C", str(project_dir)]
-            if makefile != "Makefile":
-                cmd.extend(["-f", makefile])
+    def _build_cpp_windows(self, cef_dir: Path) -> None:
+        """Build C++ projects using setuptools (Windows)."""
+        self.app.display_info("Building C++ projects with setuptools...")
 
-            result = subprocess.run(
-                cmd,
-                env=env,
-                capture_output=True,
-                text=True,
-            )
+        env = os.environ.copy()
+        env["CEF_BINARIES_LIBRARIES"] = str(cef_dir)
 
-            if result.returncode != 0:
-                self.app.display_error(f"Failed to build {name}")
-                self.app.display_error(result.stderr)
-                raise RuntimeError(f"C++ build failed for {name}")
+        result = subprocess.run(
+            [sys.executable, "tools/build_cpp_projects.py"],
+            cwd=str(self.root),
+            env=env,
+            capture_output=True,
+            text=True,
+        )
 
-        self.app.display_success("C++ libraries built successfully")
+        if result.returncode != 0:
+            self.app.display_error("Failed to build C++ projects")
+            self.app.display_error(result.stderr)
+            raise RuntimeError("C++ build failed on Windows")
+
+    def _get_cef_ccflags(self) -> str:
+        """Get CEF compiler flags for current platform."""
+        flags = "-std=gnu++17 -DNDEBUG -Wall -Werror"
+
+        if LINUX:
+            flags += " -Wno-deprecated-declarations -O3"
+        elif MAC:
+            flags += (" -O3 -arch x86_64 -Wno-return-type-c-linkage"
+                     " -stdlib=libc++ -fno-strict-aliasing -fno-rtti"
+                     " -fno-threadsafe-statics -fobjc-call-cxx-cdtors"
+                     " -fvisibility=hidden -fvisibility-inlines-hidden")
+
+        return flags
+
+    def _run_make(self, name: str, directory: str, makefile: str, env: dict) -> None:
+        """Run make command for a C++ project."""
+        self.app.display_info(f"Building {name}...")
+        project_dir = Path(self.root) / directory
+
+        cmd = ["make", "-C", str(project_dir)]
+        if makefile != "Makefile":
+            cmd.extend(["-f", makefile])
+
+        result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            self.app.display_error(f"Failed to build {name}")
+            self.app.display_error(result.stderr)
+            raise RuntimeError(f"C++ build failed for {name}")
 
     def _build_cython_extension(self) -> None:
         """Build the Cython extension module."""
@@ -137,10 +219,26 @@ class CefPythonBuildHook(BuildHookInterface):
             "src/**/__pycache__",
             "src/**/*.pyc",
             "src/**/*.pyo",
-            "src/**/*.so",
-            "src/**/*.o",
-            "src/**/*.a",
         ]
+
+        # Platform-specific binary extensions
+        if WINDOWS:
+            patterns.extend([
+                "src/**/*.pyd",
+                "src/**/*.dll",
+                "src/**/*.obj",
+                "src/**/*.lib",
+                "src/**/*.exp",
+            ])
+        else:
+            patterns.extend([
+                "src/**/*.so",
+                "src/**/*.o",
+                "src/**/*.a",
+            ])
+
+        if MAC:
+            patterns.append("src/**/*.dylib")
 
         for pattern in patterns:
             for path in Path(self.root).glob(pattern):

@@ -31,7 +31,8 @@ OBJ = $(filter %.o, $(SRC:.cpp=.o) $(SRC:.mm=.o))
 
 OUT = libclient_handler.a
 
-CEF_INC = $(shell dirname $(shell dirname $(shell pwd)))/build/cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64/include
+# Use CEF_BIN to derive include path (platform-aware)
+CEF_INC = $(shell dirname $(CEF_BIN))/include
 
 INC = -I./../ -I./../common/ -I$(PYTHON_INCLUDE) -I$(CEF_INC) \
 	-I/usr/include/gtk-2.0 \

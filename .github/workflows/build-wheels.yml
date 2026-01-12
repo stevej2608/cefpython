@@ -1,0 +1,206 @@
+name: Build Wheels
+
+on:
+  push:
+    branches: [ master, main, cefpython123-* ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+    inputs:
+      python_version:
+        description: 'Specific Python version to build (leave empty for all)'
+        required: false
+        type: string
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }} - Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.11', '3.12', '3.13', '3.14']
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Platform-specific dependencies
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            libgtk2.0-dev \
+            libglib2.0-dev \
+            libx11-dev \
+            libxi-dev \
+            libglu1-mesa-dev \
+            libxrender-dev \
+            libxrandr-dev \
+            libxss-dev \
+            libxcursor-dev \
+            libxcomposite-dev \
+            libasound2-dev \
+            libpulse-dev \
+            libpango1.0-dev \
+            libatk1.0-dev \
+            libcairo2-dev \
+            libgdk-pixbuf2.0-dev
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install cmake ninja
+
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        run: |
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          choco install ninja -y
+
+      - name: Install Hatch
+        run: |
+          python -m pip install --upgrade pip
+          pip install hatch
+
+      # CEF Binary Caching - CRITICAL for 5.8GB download
+      - name: Determine CEF cache key
+        id: cef-cache-key
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            echo "cef_dir=cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64" >> $GITHUB_OUTPUT
+            echo "cache_key=cef-123-linux64-v1" >> $GITHUB_OUTPUT
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            echo "cef_dir=cef123_123.0.7+g6a21509+chromium-123.0.6312.46_macosx64" >> $GITHUB_OUTPUT
+            echo "cache_key=cef-123-macosx64-v1" >> $GITHUB_OUTPUT
+          elif [ "${{ runner.os }}" == "Windows" ]; then
+            echo "cef_dir=cef123_123.0.7+g6a21509+chromium-123.0.6312.46_windows64" >> $GITHUB_OUTPUT
+            echo "cache_key=cef-123-windows64-v1" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Cache CEF binaries
+        id: cache-cef
+        uses: actions/cache@v4
+        with:
+          path: build/${{ steps.cef-cache-key.outputs.cef_dir }}
+          key: ${{ steps.cef-cache-key.outputs.cache_key }}
+          # CEF binaries are ~5.8GB compressed, ~20GB uncompressed
+          # This will save significant CI time (30-60 minutes per build)
+
+      - name: Download and setup CEF binaries (Linux/macOS)
+        if: steps.cache-cef.outputs.cache-hit != 'true' && runner.os != 'Windows'
+        run: hatch run build:setup-cef
+
+      - name: Download and setup CEF binaries (Windows)
+        if: steps.cache-cef.outputs.cache-hit != 'true' && runner.os == 'Windows'
+        shell: pwsh
+        run: hatch run build:setup-cef-windows
+
+      - name: Build wheel
+        run: |
+          hatch build --target wheel
+
+      # Test the built wheel
+      - name: Install wheel for testing
+        shell: bash
+        run: |
+          pip install dist/*.whl
+
+      - name: Run CI headless test
+        run: |
+          python unittests/ci_headless_test.py
+        continue-on-error: true  # Don't fail build on test failures initially
+
+      - name: Run unit tests
+        run: |
+          pytest unittests/ -v
+        continue-on-error: true
+
+      - name: Test import
+        run: python -c "import cefpython3; print('Version:', cefpython3.__version__); print('Chrome version:', cefpython3.__chrome_version__); print('CEF version:', cefpython3.__cef_version__)"
+
+      # Upload artifacts
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: dist/*.whl
+          retention-days: 90
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            build/**/*.log
+            build/**/*.err
+          retention-days: 7
+
+  # Collect all wheels and create summary
+  collect-artifacts:
+    name: Collect Build Artifacts
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: wheel-*
+          path: dist/
+
+      - name: Flatten directory structure
+        run: |
+          mkdir -p wheels
+          find dist -name "*.whl" -exec cp {} wheels/ \;
+
+      - name: Generate checksums
+        run: |
+          cd wheels
+          sha256sum *.whl > SHA256SUMS
+          md5sum *.whl > MD5SUMS
+
+      - name: Upload collected wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-wheels
+          path: |
+            wheels/*.whl
+            wheels/SHA256SUMS
+            wheels/MD5SUMS
+          retention-days: 90
+
+      - name: Build summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Built Wheels" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -1 wheels/*.whl | xargs -n1 basename | sort >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Total Size" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          du -sh wheels/ >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### SHA256 Checksums" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat wheels/SHA256SUMS >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

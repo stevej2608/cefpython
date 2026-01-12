@@ -1,0 +1,157 @@
+name: Validate Wheels
+
+on:
+  workflow_run:
+    workflows: ["Build Wheels"]
+    types: [completed]
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate wheel on ${{ matrix.os }} - Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.11', '3.12', '3.13']
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: dist/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Install wheel
+        shell: bash
+        run: |
+          pip install dist/*.whl
+
+      - name: Verify installation
+        shell: bash
+        run: |
+          python -c "import cefpython3; print('✓ Import successful')"
+          python -c "import cefpython3; print('Version:', cefpython3.__version__)"
+          python -c "import cefpython3; print('Chrome version:', cefpython3.__chrome_version__)"
+          python -c "import cefpython3; print('CEF version:', cefpython3.__cef_version__)"
+          python -c "import cefpython3; print('CEF API hash (platform):', cefpython3.__cef_api_hash_platform__)"
+          python -c "import cefpython3; print('CEF API hash (universal):', cefpython3.__cef_api_hash_universal__)"
+
+      - name: Check binary files exist
+        shell: bash
+        run: |
+          python -c "
+          import cefpython3
+          import os
+          import sys
+
+          pkg_dir = os.path.dirname(cefpython3.__file__)
+          print(f'Package directory: {pkg_dir}')
+          print(f'Contents: {os.listdir(pkg_dir)[:10]}...')  # First 10 items
+
+          # Check for required files based on platform
+          required = ['subprocess']
+
+          if sys.platform == 'win32':
+              required.extend(['libcef.dll'])
+          elif sys.platform == 'darwin':
+              required.extend(['Chromium Embedded Framework.framework'])
+          else:  # Linux
+              required.extend(['libcef.so'])
+
+          missing = []
+          for req in required:
+              path = os.path.join(pkg_dir, req)
+              if not os.path.exists(path):
+                  missing.append(req)
+              else:
+                  size = os.path.getsize(path) if os.path.isfile(path) else 'N/A (directory)'
+                  print(f'✓ Found: {req} ({size} bytes)')
+
+          if missing:
+              print(f'✗ ERROR: Missing required files: {missing}')
+              sys.exit(1)
+          else:
+              print('✓ All required binary files present')
+          "
+
+      - name: Check CEF version consistency
+        shell: bash
+        run: |
+          python -c "
+          import cefpython3
+
+          # All platforms should have CEF 123
+          chrome_major = int(cefpython3.__chrome_version__.split('.')[0])
+
+          if chrome_major != 123:
+              print(f'✗ ERROR: Expected Chrome 123, got {chrome_major}')
+              exit(1)
+          else:
+              print(f'✓ Chrome version correct: {chrome_major}')
+
+          # Check CEF version string format
+          if '123.0.7' not in cefpython3.__cef_version__:
+              print(f'✗ ERROR: Unexpected CEF version: {cefpython3.__cef_version__}')
+              exit(1)
+          else:
+              print(f'✓ CEF version correct: {cefpython3.__cef_version__}')
+          "
+
+      - name: Validate wheel metadata
+        shell: bash
+        run: |
+          pip show cefpython3 | grep -E "^(Name|Version|Location|Requires|Required-by):"
+
+      - name: Test module structure
+        shell: bash
+        run: |
+          python -c "
+          import cefpython3
+          import inspect
+
+          # Check key classes exist
+          required_classes = ['CefBrowser', 'CefFrame', 'WindowInfo']
+          missing = []
+
+          for cls_name in required_classes:
+              if not hasattr(cefpython3, cls_name):
+                  missing.append(cls_name)
+              else:
+                  print(f'✓ Found class: {cls_name}')
+
+          if missing:
+              print(f'✗ ERROR: Missing classes: {missing}')
+              exit(1)
+
+          # Check key functions exist
+          required_functions = ['Initialize', 'Shutdown', 'CreateBrowserSync', 'MessageLoop']
+          missing_funcs = []
+
+          for func_name in required_functions:
+              if not hasattr(cefpython3, func_name):
+                  missing_funcs.append(func_name)
+              else:
+                  print(f'✓ Found function: {func_name}')
+
+          if missing_funcs:
+              print(f'✗ ERROR: Missing functions: {missing_funcs}')
+              exit(1)
+
+          print('✓ All required API elements present')
+          "
+
+      - name: Validation summary
+        if: success()
+        run: |
+          echo "✅ Wheel validation passed for ${{ matrix.os }} Python ${{ matrix.python-version }}"

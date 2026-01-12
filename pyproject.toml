@@ -31,7 +31,9 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: BSD License",
+    "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -64,10 +66,9 @@ Changelog = "https://github.com/cztomczak/cefpython/blob/master/CHANGELOG.md"
 
 # Version is statically defined in [project] section above
 
-# NOTE: Custom build hook is available in hatch_build.py but not enabled by default
-# To use it, add this to your local configuration:
-# [tool.hatch.build]
-# hooks.custom.path = "hatch_build.py"
+# Enable custom build hook for platform-aware building
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["build/cefpython3_123.0_linux64/cefpython3"]
@@ -137,41 +138,111 @@ all = [
     "build-wheel",
     "checksums",
 ]
-# Download and setup CEF binaries if not present
+# Download and setup CEF binaries if not present (Linux/Mac)
 setup-cef = """
-if [ ! -d "build/cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64" ]; then
-    echo "CEF binaries not found. Downloading..."
+# Detect platform
+if [ "$(uname)" = "Linux" ]; then
+    CEF_POSTFIX2="linux64"
+elif [ "$(uname)" = "Darwin" ]; then
+    CEF_POSTFIX2="macosx64"
+else
+    echo "Unsupported platform for this script. Use setup-cef-windows for Windows."
+    exit 1
+fi
+
+CEF_DIR="cef123_"$CEF_VERSION"_"$CEF_POSTFIX2
+CEF_URL="https://cef-builds.spotifycdn.com/cef_binary_"$CEF_VERSION"_"$CEF_POSTFIX2".tar.bz2"
+
+if [ ! -d "build/$CEF_DIR" ]; then
+    echo "CEF binaries not found. Downloading from $CEF_URL..."
+    echo "This will download approximately 5.8GB. Please be patient..."
     mkdir -p build
     cd build
-    curl -L -o cef_binary_linux64.tar.bz2 https://cef-builds.spotifycdn.com/cef_binary_123.0.7%2Bg6a21509%2Bchromium-123.0.6312.46_linux64.tar.bz2
-    tar -xjf cef_binary_linux64.tar.bz2
-    mv cef_binary_123.0.7+g6a21509+chromium-123.0.6312.46_linux64 cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64
-    cd cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64
+
+    curl -L -o cef_binary.tar.bz2 "$CEF_URL"
+    echo "Extracting CEF binaries..."
+    tar -xjf cef_binary.tar.bz2
+    mv "cef_binary_"$CEF_VERSION"_"$CEF_POSTFIX2 "$CEF_DIR"
+
+    cd "$CEF_DIR"
+    echo "Building libcef_dll_wrapper..."
     mkdir -p build && cd build
     cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
     ninja libcef_dll_wrapper
+
     touch ../lib/README.txt ../lib/LICENSE.txt
     cd ..
-    # Copy Release files to bin directory for compatibility with make_installer.py
+
+    # Copy Release files to bin directory
     if [ ! -d "bin" ]; then
         mkdir -p bin
-        cp -r Release/* bin/
-        # Also copy Resources (pak files, locales, icudtl.dat)
-        cp -r Resources/* bin/
+        cp -r Release/* bin/ 2>/dev/null || true
+        cp -r Resources/* bin/ 2>/dev/null || true
     fi
+
     cd ../..
-    echo "CEF binaries setup complete"
+    rm cef_binary.tar.bz2
+    echo "CEF binaries setup complete: $CEF_DIR"
 else
-    echo "CEF binaries already present"
-    # Ensure bin directory exists with files from Release and Resources
-    cd build/cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64
+    echo "CEF binaries already present: build/$CEF_DIR"
+    # Ensure bin directory exists
+    cd build/$CEF_DIR
     if [ ! -d "bin" ]; then
         mkdir -p bin
-        cp -r Release/* bin/
-        cp -r Resources/* bin/
+        cp -r Release/* bin/ 2>/dev/null || true
+        cp -r Resources/* bin/ 2>/dev/null || true
     fi
     cd ../..
 fi
+"""
+# Download and setup CEF binaries for Windows (PowerShell)
+setup-cef-windows = """
+$CEF_DIR = "cef123_" + $env:CEF_VERSION + "_windows64"
+$CEF_URL = "https://cef-builds.spotifycdn.com/cef_binary_" + $env:CEF_VERSION + "_windows64.tar.bz2"
+
+if (-not (Test-Path "build/$CEF_DIR")) {
+    Write-Host "CEF binaries not found. Downloading from $CEF_URL..."
+    Write-Host "This will download approximately 5.8GB. Please be patient..."
+    New-Item -ItemType Directory -Force -Path build | Out-Null
+    Set-Location build
+
+    Invoke-WebRequest -Uri $CEF_URL -OutFile "cef_binary.tar.bz2"
+    Write-Host "Extracting CEF binaries..."
+    tar -xjf cef_binary.tar.bz2
+    Rename-Item ("cef_binary_" + $env:CEF_VERSION + "_windows64") $CEF_DIR
+
+    Set-Location $CEF_DIR
+    Write-Host "Building libcef_dll_wrapper..."
+    New-Item -ItemType Directory -Force -Path build | Out-Null
+    Set-Location build
+    cmake .. -G "Visual Studio 17 2022" -A x64
+    cmake --build . --config Release --target libcef_dll_wrapper
+
+    Set-Location ..
+    New-Item -ItemType File -Force -Path lib/README.txt | Out-Null
+    New-Item -ItemType File -Force -Path lib/LICENSE.txt | Out-Null
+
+    # Copy Release files to bin directory
+    if (-not (Test-Path "bin")) {
+        New-Item -ItemType Directory -Force -Path bin | Out-Null
+        Copy-Item -Recurse Release/* bin/ -ErrorAction SilentlyContinue
+        Copy-Item -Recurse Resources/* bin/ -ErrorAction SilentlyContinue
+    }
+
+    Set-Location ../..
+    Remove-Item cef_binary.tar.bz2
+    Write-Host "CEF binaries setup complete: $CEF_DIR"
+} else {
+    Write-Host "CEF binaries already present: build/$CEF_DIR"
+    # Ensure bin directory exists
+    Set-Location build/$CEF_DIR
+    if (-not (Test-Path "bin")) {
+        New-Item -ItemType Directory -Force -Path bin | Out-Null
+        Copy-Item -Recurse Release/* bin/ -ErrorAction SilentlyContinue
+        Copy-Item -Recurse Resources/* bin/ -ErrorAction SilentlyContinue
+    }
+    Set-Location ../..
+}
 """
 # Build C++ libraries
 build-libs = """
@@ -240,6 +311,7 @@ directives = { language_level = "3", embedsignature = true }
 
 # Platform-specific settings
 [tool.hatch.envs.build.env-vars]
+CEF_VERSION = "123.0.7+g6a21509+chromium-123.0.6312.46"
 CFLAGS = "-std=gnu++17 -O3 -DNDEBUG"
 CXXFLAGS = "-std=gnu++17 -O3 -DNDEBUG"
 LDFLAGS = "-flto"
