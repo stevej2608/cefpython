@@ -71,10 +71,20 @@ Changelog = "https://github.com/cztomczak/cefpython/blob/master/CHANGELOG.md"
 path = "hatch_build.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["build/cefpython3_123.0_linux64/cefpython3"]
-# Include all binary files
+# Platform-specific package paths - will be set dynamically
+# Linux: build/cefpython3_123.0_linux64/cefpython3
+# Windows: build/cefpython3_123.0_win64/cefpython3
+# Mac: build/cefpython3_123.0_mac64/cefpython3
+packages = []  # Set dynamically by build hook
+
+# Include all binary files (platform-agnostic patterns)
 include = [
-    "cefpython3/*.so",
+    "cefpython3/*.so",      # Linux
+    "cefpython3/*.pyd",     # Windows
+    "cefpython3/*.dll",     # Windows
+    "cefpython3/*.exe",     # Windows
+    "cefpython3/*.lib",     # Windows
+    "cefpython3/*.dylib",   # Mac
     "cefpython3/subprocess",
     "cefpython3/libcef.so",
     "cefpython3/lib*.so*",
@@ -86,11 +96,14 @@ include = [
     "cefpython3/chrome-sandbox",
     "cefpython3/examples/**/*",
     "cefpython3/*.txt",
+    "cefpython3/License",
+    "cefpython3/LICENSE.txt",
+    "cefpython3/README.txt",
 ]
 
+# Platform-specific force-include will be set by build hook
+# This section is kept for reference but overridden at build time
 [tool.hatch.build.targets.wheel.force-include]
-"build/cefpython3_123.0_linux64/cefpython3" = "cefpython3"
-"build/cefpython3_123.0_linux64/examples" = "cefpython3/examples"
 
 [tool.hatch.build.targets.sdist]
 include = [

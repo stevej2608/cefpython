@@ -44,12 +44,13 @@ class CefPythonBuildHook(BuildHookInterface):
         chrome_major = version_info["CHROME_VERSION_MAJOR"]
 
         # Pattern: cef123_123.0.7+g6a21509+chromium-123.0.6312.46_{platform}
-        basename = f"cef{chrome_major}_{cef_version}_{CEF_POSTFIX2}"
+        # Note: Uses OS_POSTFIX2 (win64) not CEF_POSTFIX2 (windows64)
+        basename = f"cef{chrome_major}_{cef_version}_{OS_POSTFIX2}"
         cef_dir = self.build_dir / basename
 
         if not cef_dir.exists():
             # Try glob pattern for any CEF directory matching major version
-            pattern = f"cef{chrome_major}_*_{CEF_POSTFIX2}"
+            pattern = f"cef{chrome_major}_*_{OS_POSTFIX2}"
             matches = list(self.build_dir.glob(pattern))
             if matches:
                 cef_dir = matches[0]
@@ -67,10 +68,19 @@ class CefPythonBuildHook(BuildHookInterface):
         if self.target_name != "wheel":
             return
 
-        self.app.display_info("Starting CEF Python build process...")
-        self._build_native_libraries()
-        self._build_cython_extension()
-        self._create_installer_package()
+        # Check if installer package already exists
+        installer_dir = Path(f"build/cefpython3_{self.version}_{OS_POSTFIX2}")
+        if installer_dir.exists():
+            self.app.display_info(f"Installer package already exists at {installer_dir}")
+            self.app.display_info("Skipping build steps, using existing package")
+        else:
+            self.app.display_info("Starting CEF Python build process...")
+            self._build_native_libraries()
+            self._build_cython_extension()
+            self._create_installer_package()
+
+        # Configure platform-specific wheel paths
+        self._configure_wheel_paths(build_data)
 
     def _build_native_libraries(self) -> None:
         """Build all C++ libraries using platform-specific methods."""
@@ -205,6 +215,23 @@ class CefPythonBuildHook(BuildHookInterface):
         """Get the Python include directory."""
         import sysconfig
         return sysconfig.get_path("include")
+
+    def _configure_wheel_paths(self, build_data: Dict[str, Any]) -> None:
+        """Configure platform-specific paths for wheel building."""
+        # Determine the installer package directory based on platform
+        installer_dir = f"build/cefpython3_{self.version}_{OS_POSTFIX2}"
+
+        self.app.display_info(f"Configuring wheel paths for {OS_POSTFIX2}...")
+        self.app.display_info(f"Package directory: {installer_dir}")
+
+        # Set the force_include paths for the wheel
+        if "force_include" not in build_data:
+            build_data["force_include"] = {}
+
+        build_data["force_include"][f"{installer_dir}/cefpython3"] = "cefpython3"
+        build_data["force_include"][f"{installer_dir}/examples"] = "cefpython3/examples"
+
+        self.app.display_success("Wheel paths configured successfully")
 
     def clean(self, versions: list[str]) -> None:
         """Clean build artifacts."""
