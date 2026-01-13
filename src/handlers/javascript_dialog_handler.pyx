@@ -56,7 +56,7 @@ cdef public cpp_bool JavascriptDialogHandler_OnJavascriptDialog(
         pyCallback = CreatePyJavascriptDialogCallback(callback)
         pySuppressMessage = [bool(suppress_message)]
         
-        clientCallback = pyBrowser.GetClientCallback("OnJavascriptDialog")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"OnJavascriptDialog")
         if clientCallback:
             returnValue = clientCallback(
                     browser=pyBrowser,
@@ -94,7 +94,7 @@ cdef public cpp_bool JavascriptDialogHandler_OnBeforeUnloadJavascriptDialog(
         pyCallback = CreatePyJavascriptDialogCallback(callback)
 
         clientCallback = pyBrowser.GetClientCallback(
-                "OnBeforeUnloadJavascriptDialog")
+                <py_string>"OnBeforeUnloadJavascriptDialog")
         if clientCallback:
             returnValue = clientCallback(
                     browser=pyBrowser,
@@ -115,7 +115,7 @@ cdef public void JavascriptDialogHandler_OnResetJavascriptDialogState(
         pyBrowser = GetPyBrowser(cefBrowser,
                                          "OnResetJavascriptDialogState")
         callback = pyBrowser.GetClientCallback(
-                "OnResetJavascriptDialogState")
+                <py_string>"OnResetJavascriptDialogState")
         if callback:
             callback(browser=pyBrowser)
     except:
@@ -129,7 +129,7 @@ cdef public void JavascriptDialogHandler_OnJavascriptDialogClosed(
     try:
         pyBrowser = GetPyBrowser(cefBrowser,
                                          "OnJavascriptDialogClosed")
-        callback = pyBrowser.GetClientCallback("OnJavascriptDialogClosed")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnJavascriptDialogClosed")
         if callback:
             callback(browser=pyBrowser)
     except:

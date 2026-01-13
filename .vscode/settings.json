@@ -19,4 +19,22 @@
         "tests"
     ],
 
+    "terminal.integrated.profiles.windows": {
+        "Dev CMD": {
+            "path": "cmd.exe",
+            "args": [
+                "/k",
+                "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat"
+            ]
+        },
+        "Dev PowerShell": {
+            "path": "powershell.exe",
+            "args": [
+                "-NoExit",
+                "-Command",
+                "& 'C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat'"
+            ]
+        }
+    }
+
 }

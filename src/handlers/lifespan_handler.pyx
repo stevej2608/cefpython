@@ -55,7 +55,7 @@ cdef public cpp_bool LifespanHandler_OnBeforePopup(
         pyNoJavascriptAccess = [noJavascriptAccess[0]]
         pyWindowInfo = []
         pyBrowserSettings = []
-        callback = pyBrowser.GetClientCallback("OnBeforePopup")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnBeforePopup")
         if callback:
             returnValue = bool(callback(
                     browser=pyBrowser,
@@ -86,7 +86,7 @@ cdef public void LifespanHandler_OnAfterCreated(
     cdef PyBrowser pyBrowser
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnAfterCreated")
-        callback = GetGlobalClientCallback("OnAfterCreated")
+        callback = GetGlobalClientCallback(<py_string>"OnAfterCreated")
         if callback:
             callback(browser=pyBrowser)
     except:
@@ -99,7 +99,7 @@ cdef public cpp_bool LifespanHandler_DoClose(
     cdef PyBrowser pyBrowser
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "DoClose")
-        callback = pyBrowser.GetClientCallback("DoClose")
+        callback = pyBrowser.GetClientCallback(<py_string>"DoClose")
         if callback:
             return bool(callback(browser=pyBrowser))
         return False
@@ -114,7 +114,7 @@ cdef public void LifespanHandler_OnBeforeClose(
     cdef int browserId
     cdef object callback
     try:
-        Debug("LifespanHandler_OnBeforeClose")
+        Debug(<py_string>"LifespanHandler_OnBeforeClose")
         # NOTE: browser_id may not necessarily be in g_pyBrowsers currently.
         #       I haven't yet debugged it but the logic in Shutdown that
         #       tries to force close browsers and removes references might
@@ -125,7 +125,7 @@ cdef public void LifespanHandler_OnBeforeClose(
         #       3. Open demo popup
         #       4. Close main window (not popup)
         pyBrowser = GetPyBrowser(cefBrowser, "OnBeforeClose")
-        callback = pyBrowser.GetClientCallback("OnBeforeClose")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnBeforeClose")
         if callback:
             callback(browser=pyBrowser)
 

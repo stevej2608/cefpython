@@ -25,7 +25,7 @@ cdef public void V8ContextHandler_OnContextCreated(
         pyBrowser.SetUserData("__v8ContextCreated", True)
         pyFrame = GetPyFrame(cefFrame)
         # User defined callback
-        clientCallback = pyBrowser.GetClientCallback("OnContextCreated")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"OnContextCreated")
         if clientCallback:
             clientCallback(browser=pyBrowser, frame=pyFrame)
     except:
@@ -48,10 +48,10 @@ cdef public void V8ContextHandler_OnContextReleased(
         # There is no guarantee that this will get called for frames in the
         # main browser, if the browser is destroyed shortly after the frames
         # were released.
-        Debug("V8ContextHandler_OnContextReleased()")
+        Debug(<py_string>"V8ContextHandler_OnContextReleased()")
         pyBrowser = GetPyBrowserById(browserId)
         if not pyBrowser:
-            Debug("OnContextReleased: Browser doesn't exist anymore, id={id}"
+            Debug(<py_string>"OnContextReleased: Browser doesn't exist anymore, id={id}"
                   .format(id=str(browserId)))
             RemovePyFrame(browserId, CefToPyString(frameId))
             return
@@ -59,7 +59,7 @@ cdef public void V8ContextHandler_OnContextReleased(
         # Frame may already be destroyed while IPC messaging was executing
         # (Issue #431).
         if pyFrame:
-            clientCallback = pyBrowser.GetClientCallback("OnContextReleased")
+            clientCallback = pyBrowser.GetClientCallback(<py_string>"OnContextReleased")
             if clientCallback:
                 clientCallback(browser=pyBrowser, frame=pyFrame)
         RemovePyFrame(browserId, CefToPyString(frameId))

@@ -14,9 +14,9 @@ cdef class DragData:
 
     def __init__(self):
         self.cef_drag_data = CefDragData_Create()
-        self.cef_drag_data.get().SetFragmentText(PyToCefStringValue("none"))
-        self.cef_drag_data.get().SetFragmentHtml(PyToCefStringValue("none"))
-        self.cef_drag_data.get().SetFragmentBaseURL(PyToCefStringValue(""))
+        self.cef_drag_data.get().SetFragmentText(PyToCefStringValue(<py_string>"none"))
+        self.cef_drag_data.get().SetFragmentHtml(PyToCefStringValue(<py_string>"none"))
+        self.cef_drag_data.get().SetFragmentBaseURL(PyToCefStringValue(<py_string>""))
 
     cpdef py_bool IsLink(self):
         return self.cef_drag_data.get().IsLink()

@@ -23,7 +23,7 @@ cdef object CheckForCefPythonMessageHash(CefRefPtr[CefBrowser] cefBrowser,
     # TODO: this could be sent using CefBinaryNamedString in the future,
     #       see this topic "Sending custom data types using process messaging":
     #       http://www.magpcss.org/ceforum/viewtopic.php?f=6&t=10881
-    cdef py_string cefPythonMessageHash = "####cefpython####"
+    cdef py_string cefPythonMessageHash = <py_string>"####cefpython####"
     cdef JavascriptCallback jsCallback
     cdef py_string jsonData
     cdef object message
@@ -76,7 +76,7 @@ cdef object CefValueToPyValue(CefRefPtr[CefValue] cefValue):
                     &int64_value, sizeof(int64_value), 0)
             return int64_value
         else:
-            NonCriticalError("Unknown binary value, size=%s" % \
+            NonCriticalError(<py_string>"Unknown binary value, size=%s" % \
                     binaryValue.get().GetSize())
             return None
     else:
@@ -139,7 +139,7 @@ cdef list CefListValueToPyList(
                         &int64_value, sizeof(int64_value), 0)
                 ret.append(int64_value)
             else:
-                NonCriticalError("Unknown binary value, size=%s" % \
+                NonCriticalError(<py_string>"Unknown binary value, size=%s" % \
                     binaryValue.get().GetSize())
                 ret.append(None)
         else:
@@ -209,7 +209,7 @@ cdef dict CefDictionaryValueToPyDict(
                         &int64_value, sizeof(int64_value), 0)
                 ret[pyKey] = int64_value
             else:
-                NonCriticalError("Unknown binary value, size=%s" % \
+                NonCriticalError(<py_string>"Unknown binary value, size=%s" % \
                     binaryValue.get().GetSize())
                 ret[pyKey] = None
         else:

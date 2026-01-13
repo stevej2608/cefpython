@@ -8,7 +8,7 @@ include "browser.pyx"
 cdef JavascriptCallback CreateJavascriptCallback(int callbackId,
         CefRefPtr[CefBrowser] cefBrowser, py_string frameId,
         py_string functionName):
-    Debug("Created javascript callback, callbackId=%s, functionName=%s" % \
+    Debug(<py_string>"Created javascript callback, callbackId=%s, functionName=%s" % \
             (callbackId, functionName))
     cdef JavascriptCallback jsCallback = JavascriptCallback()
     jsCallback.callbackId = callbackId
@@ -33,7 +33,7 @@ cdef class JavascriptCallback:
                 browser.GetMainFrame().SendProcessMessage(
                         cef_types.PID_RENDERER,
                         self.frame.GetIdentifier(),
-                        "ExecuteJavascriptCallback",
+                        <py_string>"ExecuteJavascriptCallback",
                         [self.callbackId] + list(args))
             else:
                 # This code probably ain't needed

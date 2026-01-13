@@ -81,7 +81,7 @@ cdef public void PyTaskRunnable(int taskId) except * with gil:
         del g_tasks[str(taskId)]
 
         # Execute user func.
-        Debug("PyTaskRunnable: taskId=%s, func=%s" % (taskId, func.__name__))
+        Debug(<py_string>"PyTaskRunnable: taskId=%s, func=%s" % (taskId, func.__name__))
         func(*params)
 
     except:

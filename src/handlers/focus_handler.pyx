@@ -20,7 +20,7 @@ cdef public void FocusHandler_OnTakeFocus(
     try:
         assert IsThread(TID_UI), "Must be called on the UI thread"
         browser = GetPyBrowser(cef_browser, "OnTakeFocus")
-        callback = browser.GetClientCallback("OnTakeFocus")
+        callback = browser.GetClientCallback(<py_string>"OnTakeFocus")
         if callback:
             callback(browser=browser, next=next_)
     except:
@@ -37,7 +37,7 @@ cdef public cpp_bool FocusHandler_OnSetFocus(
     try:
         assert IsThread(TID_UI), "Must be called on the UI thread"
         browser = GetPyBrowser(cef_browser, "OnSetFocus")
-        callback = browser.GetClientCallback("OnSetFocus")
+        callback = browser.GetClientCallback(<py_string>"OnSetFocus")
         if callback:
             ret = callback(browser=browser, source=source)
             return bool(ret)
@@ -55,7 +55,7 @@ cdef public void FocusHandler_OnGotFocus(
     try:
         assert IsThread(TID_UI), "Must be called on the UI thread"
         browser = GetPyBrowser(cef_browser, "OnGotFocus")
-        callback = browser.GetClientCallback("OnGotFocus")
+        callback = browser.GetClientCallback(<py_string>"OnGotFocus")
         if callback:
             callback(browser=browser)
     except:

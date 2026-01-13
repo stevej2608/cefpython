@@ -89,9 +89,11 @@ class WindowUtils(object):
             SetWindowTextW(<HWND>windowHandle, cefTitle.ToWString().c_str())
 
     @classmethod
-    def SetIcon(cls, PyBrowser pyBrowser, py_string icon="inherit"):
+    def SetIcon(cls, PyBrowser pyBrowser, py_string icon=None):
         # `icon` parameter is not implemented.
         # Popup window inherits icon from the main window.
+        if icon is None:
+            icon = <py_string>"inherit"
 
         if pyBrowser.GetUserData("__outerWindowHandle"):
             return None
@@ -122,7 +124,7 @@ class WindowUtils(object):
                 parentWindowHandle = <uintptr_t>GetParent(
                                                     <HWND>parentWindowHandle)
 
-            Debug("WindowUtils.SetIcon(): popup inherits icon from "
+            Debug(<py_string>"WindowUtils.SetIcon(): popup inherits icon from "
                     "parent window: %s" % parentWindowHandle)
 
             parentIconBig = SendMessage(

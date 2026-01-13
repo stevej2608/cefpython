@@ -38,7 +38,7 @@ cdef PyFrame GetPyFrame(CefRefPtr[CefFrame] cefFrame):
         # However even though frame is not supposed to exist, you
         # can still call CefFrame.ExecuteFunction and it works fine
         # in tutorial.py example.
-        Debug("GetPyFrame(): underlying frame does not yet exist:"
+        Debug(<py_string>"GetPyFrame(): underlying frame does not yet exist:"
               " browserId = {0}, frameId = {1}".format(browserId, CefToPyString(frameId)))
     else:
         if uniqueFrameId in g_pyFrames:
@@ -51,7 +51,7 @@ cdef PyFrame GetPyFrame(CefRefPtr[CefFrame] cefFrame):
         if not pyFrame.cefFrame.get():
             toRemove.append(uFid)
     for uFid in toRemove:
-        Debug("GetPyFrame(): removing an empty CefFrame reference, "
+        Debug(<py_string>"GetPyFrame(): removing an empty CefFrame reference, "
               "uniqueFrameId = %s" % uniqueFrameId)
         del g_pyFrames[uFid]
     # ----
@@ -77,7 +77,7 @@ cdef PyFrame GetPyFrame(CefRefPtr[CefFrame] cefFrame):
         # SIDE EFFECT: two calls to GetPyFrame for the same frame object
         #              may return two different PyFrame objects. Compare
         #              frame objects always using GetIdentifier().
-        Debug("GetPyFrame(): create new PyFrame, frameId=%s" % CefToPyString(frameId))
+        Debug(<py_string>"GetPyFrame(): create new PyFrame, frameId=%s" % CefToPyString(frameId))
         g_pyFrames[uniqueFrameId] = pyFrame
     return pyFrame
 
@@ -87,7 +87,7 @@ cdef void RemovePyFrame(int browserId, str frameId) except *:
     cdef PyFrame pyFrame
     cdef str uniqueFrameId = GetUniqueFrameId(browserId, frameId)
     if uniqueFrameId in g_pyFrames:
-        Debug("del g_pyFrames[%s]" % uniqueFrameId)
+        Debug(<py_string>"del g_pyFrames[%s]" % uniqueFrameId)
         pyFrame = g_pyFrames[uniqueFrameId]
         pyFrame.cefFrame.Assign(nullptr)
         del pyFrame
@@ -95,7 +95,7 @@ cdef void RemovePyFrame(int browserId, str frameId) except *:
         g_unreferenced_frames.append(uniqueFrameId)
         RemovePythonCallbacksForFrame(frameId)
     else:
-        Debug("RemovePyFrame() FAILED: uniqueFrameId = %s" % uniqueFrameId)
+        Debug(<py_string>"RemovePyFrame() FAILED: uniqueFrameId = %s" % uniqueFrameId)
 
 cdef void RemovePyFramesForBrowser(int browserId) except *:
     # Called from LifespanHandler_BeforeClose().
@@ -107,7 +107,7 @@ cdef void RemovePyFramesForBrowser(int browserId) except *:
         if pyFrame.GetBrowserIdentifier() == browserId:
             toRemove.append(uniqueFrameId)
     for uniqueFrameId in toRemove:
-        Debug("del g_pyFrames[%s]" % uniqueFrameId)
+        Debug(<py_string>"del g_pyFrames[%s]" % uniqueFrameId)
         pyFrame = g_pyFrames[uniqueFrameId]
         pyFrame.cefFrame.Assign(nullptr)
         del pyFrame
@@ -164,7 +164,9 @@ cdef class PyFrame:
         self.ExecuteJavascript(code)
 
     cpdef py_void ExecuteJavascript(self, py_string jsCode,
-            py_string scriptUrl="", int startLine=1):
+            py_string scriptUrl=None, int startLine=1):
+        if scriptUrl is None:
+            scriptUrl = <py_string>""
         self.GetCefFrame().get().ExecuteJavaScript(PyToCefStringValue(jsCode),
                 PyToCefStringValue(scriptUrl), startLine)
 
@@ -237,7 +239,7 @@ cdef class PyFrame:
         PyListToExistingCefListValue(self.GetBrowserIdentifier(), 
                 frameId,
                 pyArguments, messageArguments)
-        Debug("SendProcessMessage(): message=%s, arguments size=%d" % (
+        Debug(<py_string>"SendProcessMessage(): message=%s, arguments size=%d" % (
                 messageName,
                 message.get().GetArgumentList().get().GetSize()))
 

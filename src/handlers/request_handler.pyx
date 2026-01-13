@@ -78,7 +78,7 @@ cdef public cpp_bool RequestHandler_OnBeforeBrowse(
         pyBrowser = GetPyBrowser(cefBrowser, "OnBeforeBrowse")
         pyFrame = GetPyFrame(cefFrame)
         pyRequest = CreatePyRequest(cefRequest)
-        clientCallback = pyBrowser.GetClientCallback("OnBeforeBrowse")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"OnBeforeBrowse")
         if clientCallback:
             returnValue = clientCallback(
                     browser=pyBrowser,
@@ -113,7 +113,7 @@ cdef public cpp_bool RequestHandler_OnBeforeResourceLoad(
         pyBrowser = GetPyBrowser(cefBrowser, "OnBeforeResourceLoad")
         pyFrame = GetPyFrame(cefFrame)
         pyRequest = CreatePyRequest(cefRequest)
-        clientCallback = pyBrowser.GetClientCallback("OnBeforeResourceLoad")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"OnBeforeResourceLoad")
         if clientCallback:
             returnValue = clientCallback(
                     browser=pyBrowser,
@@ -146,7 +146,7 @@ cdef public CefRefPtr[CefResourceHandler] RequestHandler_GetResourceHandler(
         pyBrowser = GetPyBrowser(cefBrowser, "GetResourceHandler")
         pyFrame = GetPyFrame(cefFrame)
         pyRequest = CreatePyRequest(cefRequest)
-        clientCallback = pyBrowser.GetClientCallback("GetResourceHandler")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"GetResourceHandler")
         if clientCallback:
             returnValue = clientCallback(
                     browser=pyBrowser,
@@ -190,7 +190,7 @@ cdef public void RequestHandler_OnResourceRedirect(
         pyNewUrlOut = [CefToPyString(cefNewUrl)]
         pyRequest = CreatePyRequest(cefRequest)
         pyResponse = CreatePyResponse(cefResponse)
-        clientCallback = pyBrowser.GetClientCallback("OnResourceRedirect")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"OnResourceRedirect")
         if clientCallback:
             clientCallback(
                     browser=pyBrowser,
@@ -244,7 +244,7 @@ cdef public cpp_bool RequestHandler_GetAuthCredentials(
         pyAuthCallback = CreatePyAuthCallback(cefAuthCallback)
         pyUsernameOut = [""]
         pyPasswordOut = [""]
-        clientCallback = pyBrowser.GetClientCallback("GetAuthCredentials")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"GetAuthCredentials")
         if clientCallback:
             returnValue = clientCallback(
                     browser=pyBrowser,
@@ -295,7 +295,7 @@ cdef public cpp_bool RequestHandler_OnQuotaRequest(
 
         pyBrowser = GetPyBrowser(cefBrowser, "OnQuotaRequest")
         pyOriginUrl = CefToPyString(cefOriginUrl)
-        clientCallback = pyBrowser.GetClientCallback("OnQuotaRequest")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"OnQuotaRequest")
         if clientCallback:
             returnValue = clientCallback(
                     browser=pyBrowser,
@@ -328,7 +328,7 @@ cdef public void RequestHandler_OnProtocolExecution(
         pyBrowser = GetPyBrowser(cefBrowser, "OnProtocolExecution")
         pyUrl = CefToPyString(cefUrl)
         pyAllowOSExecutionOut = [bool(cefAllowOSExecution)]
-        clientCallback = pyBrowser.GetClientCallback("OnProtocolExecution")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"OnProtocolExecution")
         if clientCallback:
             clientCallback(
                     browser=pyBrowser,
@@ -354,7 +354,7 @@ cdef public cpp_bool RequestHandler_OnCertificateError(
     cdef py_bool returnValue
     cdef object clientCallback
     try:
-        clientCallback = GetGlobalClientCallback("OnCertificateError")
+        clientCallback = GetGlobalClientCallback(<py_string>"OnCertificateError")
         if clientCallback:
             returnValue = clientCallback(
                     cert_error=certError,
@@ -387,7 +387,7 @@ cdef public void RequestHandler_OnRendererProcessTerminated(
 
         pyBrowser = GetPyBrowser(cefBrowser, "OnRendererProcessTerminated")
         clientCallback = pyBrowser.GetClientCallback(
-                "OnRendererProcessTerminated")
+                <py_string>"OnRendererProcessTerminated")
         if clientCallback:
             clientCallback(browser=pyBrowser, status=cefStatus)
     except:

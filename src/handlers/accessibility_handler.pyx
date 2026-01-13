@@ -13,7 +13,7 @@ cdef public void AccessibilityHandler_OnAccessibilityTreeChange(
     cdef object value = CefValueToPyValue(cefValue)
     cdef object callback
     try:
-        callback = GetGlobalClientCallback("OnAccessibilityTreeChange")
+        callback = GetGlobalClientCallback(<py_string>"OnAccessibilityTreeChange")
         if callback:
             callback(value=value)
     except:
@@ -26,7 +26,7 @@ cdef public void AccessibilityHandler_OnAccessibilityLocationChange(
     cdef object value = CefValueToPyValue(cefValue)
     cdef object callback
     try:
-        callback = GetGlobalClientCallback("OnAccessibilityLocationChange")
+        callback = GetGlobalClientCallback(<py_string>"OnAccessibilityLocationChange")
         if callback:
             callback(value=value)
     except:

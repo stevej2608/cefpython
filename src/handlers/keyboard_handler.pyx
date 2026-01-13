@@ -58,7 +58,7 @@ cdef public cpp_bool KeyboardHandler_OnPreKeyEvent(
         pyBrowser = GetPyBrowser(cefBrowser, "OnPreKeyEvent")
         pyEvent = CefToPyKeyEvent(cefEvent)
         pyIsKeyboardShortcutOut = [cefIsKeyboardShortcut[0]]
-        callback = pyBrowser.GetClientCallback("OnPreKeyEvent")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnPreKeyEvent")
         if callback:
             returnValue = callback(
                     browser=pyBrowser,
@@ -124,7 +124,7 @@ cdef public cpp_bool KeyboardHandler_OnKeyEvent(
     try:
         browser = GetPyBrowser(cefBrowser, "OnKeyEvent")
         event = CefToPyKeyEvent(cefEvent)
-        callback = browser.GetClientCallback("OnKeyEvent")
+        callback = browser.GetClientCallback(<py_string>"OnKeyEvent")
         if callback:
             returnValue = callback(
                     browser=browser,

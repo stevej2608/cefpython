@@ -76,7 +76,7 @@ cdef class WindowInfo:
     cdef public py_string windowName
 
     def __init__(self, title=""):
-        self.windowName = ""
+        self.windowName = <py_string>""
         if title:
             self.windowName = title
 
@@ -88,7 +88,7 @@ cdef class WindowInfo:
             # On Windows when parent window handle is 0 then SetAsPopup()
             # must be called instead.
             if parentWindowHandle == 0:
-                self.SetAsPopup(parentWindowHandle, "")
+                self.SetAsPopup(parentWindowHandle, <py_string>"")
                 return
         if parentWindowHandle != 0\
                 and not WindowUtils.IsWindowHandle(parentWindowHandle):

@@ -33,7 +33,7 @@ cdef py_string AnyToPyString(object value):
         # The unicode type is not defined in Python 3
         return value
     else:
-        return ""
+        return <py_string>""
 
 cdef py_string CharToPyString(
         const char* charString):
@@ -81,7 +81,7 @@ cdef py_string CefToPyString(
         ConstCefString& cefString):
     cdef cpp_string cppString
     if cefString.empty():
-        return ""
+        return <py_string>""
     IF UNAME_SYSNAME == "Windows":
         cdef wchar_t* wcharstr = <wchar_t*> cefString.c_str()
         return WidecharToPyString(wcharstr)

@@ -18,7 +18,7 @@ cdef public void DisplayHandler_OnAddressChange(
         pyBrowser = GetPyBrowser(cefBrowser, "OnAddressChange")
         pyFrame = GetPyFrame(cefFrame)
         pyUrl = CefToPyString(cefUrl)
-        callback = pyBrowser.GetClientCallback("OnAddressChange")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnAddressChange")
         if callback:
             callback(browser=pyBrowser, frame=pyFrame, url=pyUrl)
     except:
@@ -34,7 +34,7 @@ cdef public cpp_bool DisplayHandler_OnAutoResize(
     cdef object callback
     try:
         browser = GetPyBrowser(cef_browser, "OnAutoResize")
-        callback = browser.GetClientCallback("OnAutoResize")
+        callback = browser.GetClientCallback(<py_string>"OnAutoResize")
         if callback:
             return bool(callback(browser=browser, new_size=[new_size.width,
                                                   new_size.height]))
@@ -54,7 +54,7 @@ cdef public void DisplayHandler_OnTitleChange(
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnTitleChange")
         pyTitle = CefToPyString(cefTitle)
-        callback = pyBrowser.GetClientCallback("OnTitleChange")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnTitleChange")
         if callback:
             callback(browser=pyBrowser, title=pyTitle)
     except:
@@ -74,7 +74,7 @@ cdef public cpp_bool DisplayHandler_OnTooltip(
         pyBrowser = GetPyBrowser(cefBrowser, "OnTooltip")
         pyText = CefToPyString(cefText)
         pyTextOut = [pyText]
-        callback = pyBrowser.GetClientCallback("OnTooltip")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnTooltip")
         if callback:
             returnValue = callback(browser=pyBrowser, text_out=pyTextOut)
             # pyText and pyTextOut[0] are not the same strings!
@@ -95,7 +95,7 @@ cdef public void DisplayHandler_OnStatusMessage(
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnStatusMessage")
         pyValue = CefToPyString(cefValue)
-        callback = pyBrowser.GetClientCallback("OnStatusMessage")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnStatusMessage")
         if callback:
             callback(browser=pyBrowser, value=pyValue)
     except:
@@ -118,7 +118,7 @@ cdef public cpp_bool DisplayHandler_OnConsoleMessage(
         pyBrowser = GetPyBrowser(cefBrowser, "OnConsoleMessage")
         pyMessage = CefToPyString(cefMessage)
         pySource = CefToPyString(cefSource)
-        callback = pyBrowser.GetClientCallback("OnConsoleMessage")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnConsoleMessage")
         if callback:
             returnValue = callback(browser=pyBrowser, level=level,
                                    message=pyMessage, source=pySource,
@@ -137,7 +137,7 @@ cdef public void DisplayHandler_OnLoadingProgressChange(
     cdef object callback
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnLoadingProgressChange")
-        callback = pyBrowser.GetClientCallback("OnLoadingProgressChange")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnLoadingProgressChange")
         if callback:
             callback(browser=pyBrowser, progress=progress)
     except:
@@ -151,7 +151,7 @@ cdef public cpp_bool DisplayHandler_OnCursorChange(
     cdef PyBrowser pyBrowser
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnCursorChange")
-        callback = pyBrowser.GetClientCallback("OnCursorChange")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnCursorChange")
         if callback:
             ret = callback(browser=pyBrowser, cursor=<uintptr_t>cursor)
             if ret:

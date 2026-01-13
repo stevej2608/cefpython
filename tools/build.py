@@ -206,24 +206,31 @@ def command_line_args():
 
 def check_cython_version():
     print("[build.py] Check Cython version")
-    with open(os.path.join(TOOLS_DIR, "requirements.txt"), "rb") as fileobj:
-        contents = fileobj.read().decode("utf-8")
-        match = re.search(r"cython\s*==\s*([\d.]+)", contents,
-                          flags=re.IGNORECASE)
-        assert match, "cython package not found in requirements.txt"
-        require_version = match.group(1)
+    # Accept Cython versions >= 3.0.12 and < 4.0
+    min_version = "3.0.12"
+    max_version = "4.0"
+
     try:
         import Cython
         version = Cython.__version__
     except ImportError:
         # noinspection PyUnusedLocal
         Cython = None
-        print("[build.py] ERROR: Cython is not installed ({0} required)"
-              .format(require_version))
+        print("[build.py] ERROR: Cython is not installed (>={0}, <{1} required)"
+              .format(min_version, max_version))
         sys.exit(1)
-    if version != require_version:
-        print("[build.py] ERROR: Wrong Cython version: {0}. Required: {1}"
-              .format(version, require_version))
+
+    # Parse version numbers for comparison
+    def parse_version(v):
+        return tuple(map(int, v.split('.')))
+
+    current = parse_version(version)
+    minimum = parse_version(min_version)
+    maximum = parse_version(max_version)
+
+    if current < minimum or current >= maximum:
+        print("[build.py] ERROR: Wrong Cython version: {0}. Required: >={1}, <{2}"
+              .format(version, min_version, max_version))
         sys.exit(1)
     print("[build.py] Cython version: {0}".format(version))
 

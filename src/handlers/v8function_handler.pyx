@@ -28,7 +28,7 @@ cdef public void V8FunctionHandler_Execute(
         else:
             pyFrame = None
         funcName = CefToPyString(cefFuncName)
-        Debug("V8FunctionHandler_Execute(): funcName=%s" % funcName)
+        Debug(<py_string>"V8FunctionHandler_Execute(): funcName=%s" % funcName)
         jsBindings = pyBrowser.GetJavascriptBindings()
         func = jsBindings.GetFunctionOrMethod(funcName)
         if not func:
@@ -42,7 +42,7 @@ cdef public void V8FunctionHandler_Execute(
             NonCriticalError(errorMessage)
             # Raise a javascript exception in that frame if it still exists
             if pyFrame:
-                pyFrame.ExecuteJavascript("throw '%s';" % errorMessage)
+                pyFrame.ExecuteJavascript(<py_string>"throw '%s';" % errorMessage)
             return
         funcArgs = CefListValueToPyList(cefBrowser, cefFuncArgs)
         func(*funcArgs)

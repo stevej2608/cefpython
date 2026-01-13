@@ -70,7 +70,7 @@ cdef void SetApplicationSettings(
             cefAppSettings.multi_threaded_message_loop = int(appSettings[key])
         elif key == "release_dcheck_enabled":
             # Keep for BC, just log info - no error
-            Debug("DEPRECATED: 'release_dcheck_enabled' setting")
+            Debug(<py_string>"DEPRECATED: 'release_dcheck_enabled' setting")
         elif key == "javascript_flags":
             cefString = new CefString(&cefAppSettings.javascript_flags)
             PyToCefStringPointer(appSettings[key], cefString)
@@ -165,7 +165,7 @@ cdef void SetBrowserSettings(
             del cefString
         elif key == "user_style_sheet_location":
             # Keep for BC, just log info - no error
-            Debug("DEPRECATED: 'user_style_sheet_location' setting")
+            Debug(<py_string>"DEPRECATED: 'user_style_sheet_location' setting")
         elif key == "remote_fonts_disabled":
             if browserSettings[key]:
                 cefBrowserSettings.remote_fonts = cef_types.STATE_DISABLED
@@ -177,7 +177,7 @@ cdef void SetBrowserSettings(
             else:
                 cefBrowserSettings.javascript = cef_types.STATE_ENABLED
         elif key == "javascript_open_windows_disallowed":
-            Debug("DEPRECATED: 'javascript_open_windows_disallowed' setting")
+            Debug(<py_string>"DEPRECATED: 'javascript_open_windows_disallowed' setting")
         elif key == "javascript_close_windows_disallowed":
             if browserSettings[key]:
                 cefBrowserSettings.javascript_close_windows = (
@@ -201,10 +201,10 @@ cdef void SetBrowserSettings(
                         cef_types.STATE_ENABLED)
         elif key == "caret_browsing_enabled":
             # Keep the key for BC
-            Debug("DEPRECATED: 'caret_browsing_enabled' setting")
+            Debug(<py_string>"DEPRECATED: 'caret_browsing_enabled' setting")
         elif key == "java_disabled":
             # Keep the key for BC
-            Debug("DEPRECATED: 'java_disabled' setting")
+            Debug(<py_string>"DEPRECATED: 'java_disabled' setting")
         elif key == "image_load_disabled":
             if browserSettings[key]:
                 cefBrowserSettings.image_loading = cef_types.STATE_DISABLED
@@ -230,7 +230,7 @@ cdef void SetBrowserSettings(
             else:
                 cefBrowserSettings.tab_to_links = cef_types.STATE_ENABLED
         elif key == "author_and_user_styles_disabled":
-            Debug("DEPRECATED: 'author_and_user_styles_disabled' setting")
+            Debug(<py_string>"DEPRECATED: 'author_and_user_styles_disabled' setting")
         elif key == "local_storage_disabled":
             if browserSettings[key]:
                 cefBrowserSettings.local_storage = cef_types.STATE_DISABLED
@@ -247,7 +247,7 @@ cdef void SetBrowserSettings(
             else:
                 cefBrowserSettings.webgl = cef_types.STATE_ENABLED
         elif key == "accelerated_compositing_disabled":
-            Debug("DEPRECATED: 'accelerated_compositing_disabled' setting")
+            Debug(<py_string>"DEPRECATED: 'accelerated_compositing_disabled' setting")
         elif key == "windowless_frame_rate":
             cefBrowserSettings.windowless_frame_rate =\
                     <int>int(browserSettings[key])

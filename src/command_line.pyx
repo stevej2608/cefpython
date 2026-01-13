@@ -16,17 +16,17 @@ cdef void AppendSwitchesToCommandLine(
     cdef py_string value
     for switch, value in switches.iteritems():
         if not isinstance(switch, basestring) or switch[0] == '-':
-            Debug("Invalid command line switch: %s" % switch)
+            Debug(<py_string>"Invalid command line switch: %s" % switch)
             continue
         if value:
             if pyCommandLine.HasSwitch(switch)\
                     and value == pyCommandLine.GetSwitchValue(switch):
-                Debug("Switch already set, ignoring: %s" % switch)
+                Debug(<py_string>"Switch already set, ignoring: %s" % switch)
             else:
               pyCommandLine.AppendSwitchWithValue(switch, value)
         else:
             if pyCommandLine.HasSwitch(switch):
-                Debug("Switch already set, ignoring: %s" % switch)
+                Debug(<py_string>"Switch already set, ignoring: %s" % switch)
             else:
               pyCommandLine.AppendSwitch(switch)
 

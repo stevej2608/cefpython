@@ -34,7 +34,7 @@ cdef public cpp_bool RenderHandler_GetRootScreenRect(
     cdef py_bool ret
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "GetRootScreenRect")
-        callback = pyBrowser.GetClientCallback("GetRootScreenRect")
+        callback = pyBrowser.GetClientCallback(<py_string>"GetRootScreenRect")
         if callback:
             ret = callback(browser=pyBrowser, rect_out=pyRect)
             if ret:
@@ -61,7 +61,7 @@ cdef public cpp_bool RenderHandler_GetViewRect(
     cdef py_bool ret
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "GetViewRect")
-        callback = pyBrowser.GetClientCallback("GetViewRect")
+        callback = pyBrowser.GetClientCallback(<py_string>"GetViewRect")
         if callback:
             ret = callback(browser=pyBrowser, rect_out=pyRect)
             if ret:
@@ -94,7 +94,7 @@ cdef public cpp_bool RenderHandler_GetScreenRect(
     cdef py_bool ret
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "GetScreenRect")
-        callback = pyBrowser.GetClientCallback("GetScreenRect")
+        callback = pyBrowser.GetClientCallback(<py_string>"GetScreenRect")
         if callback:
             ret = callback(browser=pyBrowser, rect_out=pyRect)
             if ret:
@@ -123,7 +123,7 @@ cdef public cpp_bool RenderHandler_GetScreenPoint(
     cdef py_bool ret
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "GetScreenPoint")
-        callback = pyBrowser.GetClientCallback("GetScreenPoint")
+        callback = pyBrowser.GetClientCallback(<py_string>"GetScreenPoint")
         if callback:
             ret = callback(browser=pyBrowser,
                            view_x=viewX,
@@ -157,7 +157,7 @@ cdef public void RenderHandler_OnPopupShow(
     cdef PyBrowser pyBrowser
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnPopupShow")
-        callback = pyBrowser.GetClientCallback("OnPopupShow")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnPopupShow")
         if callback:
             callback(browser=pyBrowser, show=show)
     except:
@@ -172,7 +172,7 @@ cdef public void RenderHandler_OnPopupSize(
     cdef list pyRect
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnPopupSize")
-        callback = pyBrowser.GetClientCallback("OnPopupSize")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnPopupSize")
         if callback:
             pyRect = [cefRect.x, cefRect.y, cefRect.width, cefRect.height]
             callback(browser=pyBrowser, rect_out=pyRect)
@@ -211,7 +211,7 @@ cdef public void RenderHandler_OnPaint(
 
         paintBuffer = CreatePaintBuffer(cefBuffer, width, height)
 
-        callback = pyBrowser.GetClientCallback("OnPaint")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnPaint")
         if callback:
             callback(
                     browser=pyBrowser,
@@ -232,7 +232,7 @@ cdef public void RenderHandler_OnScrollOffsetChanged(
     cdef PyBrowser pyBrowser
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnScrollOffsetChanged")
-        callback = pyBrowser.GetClientCallback("OnScrollOffsetChanged")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnScrollOffsetChanged")
         if callback:
             callback(browser=pyBrowser)
     except:
@@ -251,7 +251,7 @@ cdef public cpp_bool RenderHandler_StartDragging(
     try:
         browser = GetPyBrowser(cef_browser, "StartDragging")
         drag_data = DragData_Init(cef_drag_data)
-        callback = browser.GetClientCallback("StartDragging")
+        callback = browser.GetClientCallback(<py_string>"StartDragging")
         if callback:
             ret = callback(
                     browser=browser,
@@ -276,7 +276,7 @@ cdef public void RenderHandler_UpdateDragCursor(
     cdef PyBrowser browser
     try:
         browser = GetPyBrowser(cef_browser, "UpdateDragCursor")
-        callback = browser.GetClientCallback("UpdateDragCursor")
+        callback = browser.GetClientCallback(<py_string>"UpdateDragCursor")
         if callback:
             callback(browser=browser, operation=operation)
     except:
@@ -291,7 +291,7 @@ cdef public void RenderHandler_OnTextSelectionChanged(
     cdef PyBrowser browser
     try:
         browser = GetPyBrowser(cef_browser, "OnTextSelectionChanged")
-        callback = browser.GetClientCallback("OnTextSelectionChanged")
+        callback = browser.GetClientCallback(<py_string>"OnTextSelectionChanged")
         if callback:
             callback(browser=browser,
                      selected_text=CefToPyString(selected_text),

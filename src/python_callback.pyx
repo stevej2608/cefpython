@@ -46,7 +46,7 @@ cdef public void RemovePythonCallbacksForFrame(
                 toRemove.append(callbackId)
         for callbackId in toRemove:
             del g_pythonCallbacks[callbackId]
-            Debug("RemovePythonCallbacksForFrame(): " \
+            Debug(<py_string>"RemovePythonCallbacksForFrame(): " \
                   "removed python callback, callbackId = %s" \
                   % callbackId)
     except:
@@ -62,7 +62,7 @@ cdef void RemovePythonCallbacksForBrowser(
             toRemove.append(callbackId)
     for callbackId in toRemove:
         del g_pythonCallbacks[callbackId]
-        Debug("RemovePythonCallbacksForBrowser(): " \
+        Debug(<py_string>"RemovePythonCallbacksForBrowser(): " \
               "removed python callback, callbackId = %s" \
               % callbackId)
 
@@ -83,7 +83,7 @@ cdef public cpp_bool ExecutePythonCallback(
             func(*funcArgs)
             return True
         else:
-            Debug("ExecutePythonCallback() FAILED: callback not found, " \
+            Debug(<py_string>"ExecutePythonCallback() FAILED: callback not found, " \
                   "callbackId = %s" % callbackId)
             return False
     except:

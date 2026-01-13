@@ -147,6 +147,7 @@ def get_winsdk_lib():
     if WINDOWS:
         if ARCH32 or ARCH64:
             winsdk_libs = [
+                r"C:\Program Files (x86)\Windows Kits\10",
                 r"C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10",
             ]
         else:
@@ -158,8 +159,8 @@ def get_winsdk_lib():
         if not ret:
             ret = winsdk_libs[0]
         if not os.path.exists(ret):
-            raise Exception("Windows SDK Lib directory not found: %s"
-                            % ret)
+            raise Exception("Windows SDK Lib directory not found: %s. Tried: %s"
+                            % (ret, ', '.join(winsdk_libs)))
     return ret
 
 

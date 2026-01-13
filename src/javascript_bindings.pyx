@@ -107,7 +107,7 @@ cdef class JavascriptBindings:
             mainFrame = pyBrowser.GetMainFrame()
             if mainFrame.IsValid():
                 mainFrame.SendProcessMessage(cef_types.PID_RENDERER,
-                    mainFrame.frameId, "DoJavascriptBindings", [{
+                    mainFrame.frameId, <py_string>"DoJavascriptBindings", [{
                             "functions": functions,
                             "properties": properties,
                             "objects": objects,

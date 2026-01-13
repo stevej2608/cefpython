@@ -22,7 +22,7 @@ def ExceptHook(exc_type, exc_value, exc_trace):
     msg = "".join(traceback.format_exception(exc_type, exc_value,
                                              exc_trace))
     error_file = GetAppPath("error.log")
-    encoding = GetAppSetting("string_encoding") or "utf-8"
+    encoding = GetAppSetting(<py_string>"string_encoding") or "utf-8"
     if type(msg) == bytes:
         msg = msg.decode(encoding=encoding, errors="replace")
     try:

@@ -31,12 +31,12 @@ class WindowUtils:
 
     @classmethod
     def GetParentHandle(cls, WindowHandle windowHandle):
-        Debug("WindowUtils::GetParentHandle() not implemented (returns 0)")
+        Debug(<py_string>"WindowUtils::GetParentHandle() not implemented (returns 0)")
         return 0
 
     @classmethod
     def IsWindowHandle(cls, WindowHandle windowHandle):
-        Debug("WindowUtils::IsWindowHandle() not implemented (always True)")
+        Debug(<py_string>"WindowUtils::IsWindowHandle() not implemented (always True)")
         return True
 
     @classmethod

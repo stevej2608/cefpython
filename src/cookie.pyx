@@ -11,7 +11,7 @@ from task cimport *
 # ------------------------------------------------------------------------------
 
 #cdef Cookie cookie = Cookie()
-#cookie.SetName("asd1")
+#cookie.SetName(<py_string>"asd1")
 #print("cookie.cefCookie: %s" % cookie.cefCookie)
 #print("cookie.GetName(): %s" % cookie.GetName())
 #print("cookie.GetCreation(): %s" % cookie.GetCreation())

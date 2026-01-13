@@ -128,152 +128,17 @@ detached = true
 dependencies = [
     "cython>=3.0.12,<4.0",
     "pillow>=9.0",
+    "setuptools>=65.0",
 ]
 
 [tool.hatch.envs.build.scripts]
-# Complete build process
-all = [
-    "setup-cef",
-    "build-libs",
-    "build-wheel",
-    "checksums",
-]
-# Download and setup CEF binaries if not present (Linux/Mac)
-setup-cef = """
-# Detect platform
-if [ "$(uname)" = "Linux" ]; then
-    CEF_POSTFIX2="linux64"
-elif [ "$(uname)" = "Darwin" ]; then
-    CEF_POSTFIX2="macosx64"
-else
-    echo "Unsupported platform for this script. Use setup-cef-windows for Windows."
-    exit 1
-fi
-
-CEF_DIR="cef123_"$CEF_VERSION"_"$CEF_POSTFIX2
-CEF_URL="https://cef-builds.spotifycdn.com/cef_binary_"$CEF_VERSION"_"$CEF_POSTFIX2".tar.bz2"
-
-if [ ! -d "build/$CEF_DIR" ]; then
-    echo "CEF binaries not found. Downloading from $CEF_URL..."
-    echo "This will download approximately 5.8GB. Please be patient..."
-    mkdir -p build
-    cd build
-
-    curl -L -o cef_binary.tar.bz2 "$CEF_URL"
-    echo "Extracting CEF binaries..."
-    tar -xjf cef_binary.tar.bz2
-    mv "cef_binary_"$CEF_VERSION"_"$CEF_POSTFIX2 "$CEF_DIR"
-
-    cd "$CEF_DIR"
-    echo "Building libcef_dll_wrapper..."
-    mkdir -p build && cd build
-    cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
-    ninja libcef_dll_wrapper
-
-    touch ../lib/README.txt ../lib/LICENSE.txt
-    cd ..
-
-    # Copy Release files to bin directory
-    if [ ! -d "bin" ]; then
-        mkdir -p bin
-        cp -r Release/* bin/ 2>/dev/null || true
-        cp -r Resources/* bin/ 2>/dev/null || true
-    fi
-
-    cd ../..
-    rm cef_binary.tar.bz2
-    echo "CEF binaries setup complete: $CEF_DIR"
-else
-    echo "CEF binaries already present: build/$CEF_DIR"
-    # Ensure bin directory exists
-    cd build/$CEF_DIR
-    if [ ! -d "bin" ]; then
-        mkdir -p bin
-        cp -r Release/* bin/ 2>/dev/null || true
-        cp -r Resources/* bin/ 2>/dev/null || true
-    fi
-    cd ../..
-fi
-"""
-# Download and setup CEF binaries for Windows (PowerShell)
-setup-cef-windows = """
-$CEF_DIR = "cef123_" + $env:CEF_VERSION + "_windows64"
-$CEF_URL = "https://cef-builds.spotifycdn.com/cef_binary_" + $env:CEF_VERSION + "_windows64.tar.bz2"
-
-if (-not (Test-Path "build/$CEF_DIR")) {
-    Write-Host "CEF binaries not found. Downloading from $CEF_URL..."
-    Write-Host "This will download approximately 5.8GB. Please be patient..."
-    New-Item -ItemType Directory -Force -Path build | Out-Null
-    Set-Location build
-
-    Invoke-WebRequest -Uri $CEF_URL -OutFile "cef_binary.tar.bz2"
-    Write-Host "Extracting CEF binaries..."
-    tar -xjf cef_binary.tar.bz2
-    Rename-Item ("cef_binary_" + $env:CEF_VERSION + "_windows64") $CEF_DIR
-
-    Set-Location $CEF_DIR
-    Write-Host "Building libcef_dll_wrapper..."
-    New-Item -ItemType Directory -Force -Path build | Out-Null
-    Set-Location build
-    cmake .. -G "Visual Studio 17 2022" -A x64
-    cmake --build . --config Release --target libcef_dll_wrapper
-
-    Set-Location ..
-    New-Item -ItemType File -Force -Path lib/README.txt | Out-Null
-    New-Item -ItemType File -Force -Path lib/LICENSE.txt | Out-Null
-
-    # Copy Release files to bin directory
-    if (-not (Test-Path "bin")) {
-        New-Item -ItemType Directory -Force -Path bin | Out-Null
-        Copy-Item -Recurse Release/* bin/ -ErrorAction SilentlyContinue
-        Copy-Item -Recurse Resources/* bin/ -ErrorAction SilentlyContinue
-    }
-
-    Set-Location ../..
-    Remove-Item cef_binary.tar.bz2
-    Write-Host "CEF binaries setup complete: $CEF_DIR"
-} else {
-    Write-Host "CEF binaries already present: build/$CEF_DIR"
-    # Ensure bin directory exists
-    Set-Location build/$CEF_DIR
-    if (-not (Test-Path "bin")) {
-        New-Item -ItemType Directory -Force -Path bin | Out-Null
-        Copy-Item -Recurse Release/* bin/ -ErrorAction SilentlyContinue
-        Copy-Item -Recurse Resources/* bin/ -ErrorAction SilentlyContinue
-    }
-    Set-Location ../..
-}
-"""
-# Build C++ libraries
-build-libs = """
-export CEF_CCFLAGS="-std=gnu++17 -DNDEBUG -Wall -Werror -Wno-deprecated-declarations -O3"
-export PYTHON_INCLUDE="$(python -c 'import sysconfig; print(sysconfig.get_path("include"))')"
-export CEF_BIN="build/cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64/bin"
-export CEF_LIB="build/cef123_123.0.7+g6a21509+chromium-123.0.6312.46_linux64/lib"
-make -C src/client_handler
-make -C src/subprocess -f Makefile-libcefpythonapp
-make -C src/subprocess
-make -C src/cpp_utils
-"""
-# Build Cython extension and create wheel
-build-wheel = """
-python tools/make_installer.py 123.0 && \
-cd build/cefpython3_123.0_linux64 && \
-echo "Stripping debug symbols from binaries to reduce package size..." && \
-strip --strip-unneeded cefpython3/lib*.so* && \
-strip --strip-unneeded cefpython3/subprocess && \
-strip --strip-unneeded cefpython3/chrome-sandbox && \
-echo "Stripped binaries. Package size should be significantly reduced." && \
-ls -lh cefpython3/libcef.so && \
-python setup.py bdist_wheel && \
-cp dist/*.whl ../../dist/
-"""
-# Generate checksums
-checksums = """
-cd dist
-sha256sum *.whl > SHA256SUMS 2>/dev/null || true
-md5sum *.whl > MD5SUMS 2>/dev/null || true
-"""
+# Complete build process - calls orchestration script
+all = "python tools/build_all.py"
+# Individual steps (can be run separately)
+setup-cef = "python tools/setup_cef.py"
+build-libs = "python tools/build.py 123.0 --fast"
+build-wheel = "python tools/build_wheel.py"
+checksums = "python tools/generate_checksums.py"
 
 [tool.hatch.envs.test]
 dependencies = [

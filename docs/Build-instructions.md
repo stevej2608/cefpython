@@ -22,25 +22,33 @@ Table of contents:
 
 ## Preface
 
-These instructions are for the new releases of CEF Python v50+.
-For the old v31 release see the build instructions on Wiki pages.
+These instructions cover building CEF Python v50+ with the modern Hatch-based build system
+(CEF 123+) and legacy build methods (v50-v66).
 
-If you would like to quickly build cefpython then see the
+**For CEF 123+ (Chromium 123+) - Modern Build System:**
+- Uses Hatch for project management
+- Automatically downloads and builds CEF binaries
+- Supports multi-platform builds
+- See [Quick build instructions for Windows](#quick-build-instructions-for-windows)
+
+**For older versions (v31-v66) - Legacy Build System:**
+- Manual CEF binary downloads
+- See sections further down for prebuilt binaries and manual builds
+
+If you would like to quickly build the latest cefpython (CEF 123+), see the
 [Quick build instructions for Windows](#quick-build-instructions-for-windows)
 and [Quick build instructions for Linux](#quick-build-instructions-for-linux)
-sections. These instructions are complete meaning you don't need
-to read anything more from this document. Using these quick
-instructions you should be able to build cefpython in less than
-10 minutes.
+sections. These instructions are complete and you should be able to build
+cefpython in less than 30 minutes (including CEF binary download time).
 
 There are several types of builds described in this document:
 
-1. You can build CEF Python using prebuilt CEF binaries and libraries
-   that were uploaded to GH releases
-2. You can build CEF Python using prebuilt CEF binaries from
-   Spotify Automated Builds.
-3. You can build upstream CEF from sources, but note that building CEF
-   is a long process that can take hours.
+1. **Modern (CEF 123+)**: Build using Hatch - automatically downloads CEF
+   binaries from Spotify CDN and builds everything
+2. **Legacy**: Build using prebuilt CEF binaries and libraries that were
+   uploaded to GH releases (for older versions)
+3. **Legacy**: Build using prebuilt CEF binaries from Spotify Automated Builds
+4. **Advanced**: Build upstream CEF from sources (takes several hours)
 
 Before you can build CEF Python or CEF you must satisfy
 [requirements](#requirements) listed on this page.
@@ -48,105 +56,91 @@ Before you can build CEF Python or CEF you must satisfy
 
 ## Quick build instructions for Windows
 
-Complete steps for building CEF Python v50+ with Python 2.7 using
-prebuilt binaries and libraries from GitHub Releases.
+Complete steps for building CEF Python with Python 3.7+ using the
+modern Hatch-based build system.
 
 When cloning repository you should checkout a stable branch which
 are named "cefpythonXX" where XX is Chromium version number.
 
-1) Tested and works fine on Windows 7 64-bit
+1) Tested and works fine on Windows 10/11 64-bit
 
-2) Download [ninja](https://github.com/ninja-build/ninja) 1.7.2 or later
-   and add it to PATH.
+2) Install **Visual Studio Build Tools 2022** or full Visual Studio 2022/2019
+   - Download from: https://visualstudio.microsoft.com/downloads/
+   - For Build Tools, select "Desktop development with C++" workload
+   - Includes CMake and build tools
 
-3) Download [cmake](https://cmake.org/download/) and add
-   it to PATH.
+3) Download [ninja](https://github.com/ninja-build/ninja/releases) 1.7.2 or later
+   - Extract and add to PATH, OR
+   - Install via chocolatey: `choco install ninja`, OR
+   - Use from within VS Developer Command Prompt (recommended with Build Tools)
 
-4) For Python 2.7 Install "Visual C++ Compiler for Python 2.7"
-  from [here](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
+4) Install Python 3.7 or later (tested with 3.12+)
 
-5) For Python 2.7 and when using using "Visual C++ compiler for Python 2.7"
-   you have to install "Visual C++ 2008 Redistributable Package"
-   from [here](https://www.microsoft.com/en-us/download/details.aspx?id=29)
-   and [here](https://www.microsoft.com/en-us/download/details.aspx?id=15336)
-
-6) Clone cefpython, checkout for example "cefpython57" branch
-   that includes Chromium v57, then create a build/ directory and enter it:
+5) Clone cefpython and checkout the appropriate branch:
 ```
 git clone https://github.com/cztomczak/cefpython.git
 cd cefpython/
-git checkout cefpython57
-mkdir build/
-cd build/
+git checkout cefpython123-multi-platform
 ```
 
-7) Install python dependencies:
+6) **IMPORTANT**: If using Build Tools (not full Visual Studio), open
+   "Developer Command Prompt for VS 2022" or "Developer PowerShell for VS 2022"
+   from the Start Menu and navigate to your project directory.
+
+7) Install Hatch (modern Python project manager):
 ```
-pip install --upgrade -r ../tools/requirements.txt
+pip install hatch
 ```
 
-8) Download Windows binaries and libraries from
-   [GH releases](https://github.com/cztomczak/cefpython/tags)
-   tagged e.g. 'v57-upstream' when building v57. The version
-   of the binaries must match exactly the CEF version from
-   the "cefpython/src/version/cef_version_win.h" file
-   (the CEF_VERSION constant).
-
-8) Extract the archive in the "build/" directory.
-
-9) Build cefpython and run examples (xx.x is version number):
+8) Build cefpython (automatically downloads CEF binaries and builds everything):
 ```
-python ../tools/build.py xx.x
+hatch run build:all
 ```
+
+This will:
+- Download CEF binaries from Spotify CDN (~5.8GB)
+- Build the libcef_dll_wrapper library
+- Build the cefpython module for your platform
+- Create wheel packages
 
 
 ## Quick build instructions for Linux
 
-Complete steps for building CEF Python v50+ using prebuilt
-binaries and libraries from GitHub Releases.
+Complete steps for building CEF Python with Python 3.7+ using the
+modern Hatch-based build system.
 
 When cloning repository you should checkout a stable branch which
 are named "cefpythonXX" where XX is Chromium version number.
 
-1) Tested and works fine on Ubuntu 14.04 64-bit
+1) Tested and works fine on Ubuntu 20.04+ 64-bit
 
-2) Download [ninja](https://github.com/ninja-build/ninja) 1.7.1 or later
-   and copy it to /usr/bin and chmod 755.
-
-3) Install required packages (tested and works with: cmake 2.8.12
-   and g++ 4.8.4):
+2) Install required packages:
 ```
-sudo apt-get install python-dev cmake g++ libgtk2.0-dev
+sudo apt-get install python3 python3-pip cmake g++ ninja-build libgtk2.0-dev libgtkglext1-dev
 ```
 
-4) Clone cefpython, checkout for example "cefpython57" branch
-   that includes Chromium v57, then create build/ directory and enter it:
+3) Install Hatch (modern Python project manager):
+```
+pip3 install hatch
+```
+
+4) Clone cefpython and checkout the appropriate branch:
 ```
 git clone https://github.com/cztomczak/cefpython.git
 cd cefpython/
-git checkout cefpython57
-mkdir build/
-cd build/
+git checkout cefpython123-multi-platform
 ```
 
-5) Install python dependencies:
+5) Build cefpython (automatically downloads CEF binaries and builds everything):
 ```
-sudo pip install --upgrade -r ../tools/requirements.txt
+hatch run build:all
 ```
 
-6) Download Linux binaries and libraries from
-   [GH releases](https://github.com/cztomczak/cefpython/tags)
-   tagged e.g. 'v57-upstream' when building v57. The version
-   of the binaries must match exactly the CEF version from
-   the "cefpython/src/version/cef_version_linux.h" file
-   (the CEF_VERSION constant).
-
-7) Extract the archive in the "build/" directory.
-
-8) Build cefpython and run examples (xx.x is version number):
-```
-python ../tools/build.py xx.x
-```
+This will:
+- Download CEF binaries from Spotify CDN (~5.8GB)
+- Build the libcef_dll_wrapper library
+- Build the cefpython module for your platform
+- Create wheel packages
 
 
 ## Requirements
@@ -157,43 +151,51 @@ requirements common for all platforms.
 
 ### Windows
 
-* Download [ninja](https://github.com/ninja-build/ninja) 1.7.2 or later
-  and add it to PATH.
-* Download [cmake](https://cmake.org/download/) and add it to PATH.
-* Install an appropriate MS compiler for a specific Python version:
-  https://wiki.python.org/moin/WindowsCompilers
-    * For Python 2.7 install "Microsoft Visual C++ Compiler for Python 2.7"
-      from [here](https://www.microsoft.com/en-us/download/details.aspx?id=44266)
-    * When using "Visual C++ compiler for Python 2.7" you have to install
-      "Microsoft Visual C++ 2008 Redistributable Package" from
-      [here](https://www.microsoft.com/en-us/download/details.aspx?id=29) and
-      [here](https://www.microsoft.com/en-us/download/details.aspx?id=15336)
-    * For Python 2.7 copy "cefpython/src/windows/py27/stdint.h" to
-      "%LocalAppData%\Programs\Common\Microsoft\Visual C++ for Python\9.0\VC\include\"
-      if does not exist
-    * For Python 3.4 follow the instructions for installing Windows SDK 7.1.
-      If you encounter issue with .NET Framework 4 then make registry edits
-      as suggested here: [Windows SDK setup failure](http://stackoverflow.com/a/33260090/623622).
-    * For Python 3.4, if getting error:
-      `Cannot open include file 'ammintrin.h': No such file or directory`
-      then Copy that `ammitrin.h` file from for example VS 2015 installation
-      directory or find this file on the web. This is a Microsoft issue.
+* **Python 3.7 or later** (tested with Python 3.12+)
+* **Visual Studio Build Tools 2022** or **Visual Studio 2022/2019** (Community, Professional, or Enterprise)
+  * Download from: https://visualstudio.microsoft.com/downloads/
+  * For Build Tools installer: Select "Desktop development with C++" workload
+  * This includes CMake and required build tools
+  * **IMPORTANT**: When using Build Tools (not full Visual Studio), you must run all build commands from:
+    * "Developer Command Prompt for VS 2022", OR
+    * "Developer PowerShell for VS 2022"
+    * These are available in the Start Menu after installing Build Tools
+* **Ninja** build system (recommended):
+  * Download [ninja](https://github.com/ninja-build/ninja/releases) 1.7.2 or later and add to PATH, OR
+  * Install via chocolatey: `choco install ninja`, OR
+  * Available automatically when running from VS Developer Command Prompt
+* **CMake** 3.0 or later (included with VS Build Tools, or download from https://cmake.org/download/)
+* **Hatch** Python project manager: `pip install hatch`
 * To build CEF from sources:
-    * Use Win7 x64 or later. 32-bit OS'es are not supported. For more details
+    * Use Windows 10/11 x64. 32-bit OS'es are not supported. For more details
      see [here](https://www.chromium.org/developers/how-tos/build-instructions-windows).
-    * For CEF branch >= 2704 install VS2015 Update 2 or later. Use the
-      Custom Install option, see details [here](https://chromium.googlesource.com/chromium/src/+/master/docs/windows_build_instructions.md#Open-source-contributors).
-    * Install [CMake](https://cmake.org/) 2.8.12.1 or newer and add cmake.exe
-        to PATH
-    * Install [ninja](http://martine.github.io/ninja/) and add ninja.exe
-        to PATH
+    * For CEF 123+ (Chromium 123+), Visual Studio 2022 or Build Tools 2022 is required
+    * Install [CMake](https://cmake.org/) 3.0 or newer and add cmake.exe to PATH
+    * Install [ninja](https://github.com/ninja-build/ninja/releases) and add ninja.exe to PATH
     * You need about 16 GB of RAM during linking. If there is an error
         just add additional virtual memory.
+
+**Note for Visual Studio Build Tools users**: The Build Tools don't register Visual Studio generators
+with CMake in the same way as the full IDE. The build scripts now automatically try the Ninja generator
+first (which works with Build Tools), then fall back to Visual Studio generators. Make sure to run from
+the Developer Command Prompt/PowerShell to ensure all build tools are in your PATH.
+
+**Troubleshooting Windows builds:**
+* If CMake cannot find Visual Studio: You're likely using Build Tools without running from Developer Command Prompt
+  * Solution: Open "Developer Command Prompt for VS 2022" or "Developer PowerShell for VS 2022" from Start Menu
+* If you see "ninja: command not found": Install ninja or it's not in PATH
+  * Solution: `choco install ninja` or download from GitHub and add to PATH
+* If you prefer full Visual Studio IDE: Install Visual Studio Community 2022 with "Desktop development with C++" workload
 
 
 ### Linux
 
-* Install packages: `sudo apt-get install cmake g++ libgtk2.0-dev libgtkglext1-dev`
+* **Python 3.7 or later** (tested with Python 3.12+)
+* Install required packages:
+  ```
+  sudo apt-get install python3 python3-pip cmake g++ ninja-build libgtk2.0-dev libgtkglext1-dev
+  ```
+* **Hatch** Python project manager: `pip3 install hatch`
 * If building CEF from sources:
     * Official binaries are built on Ubuntu 14.04 (cmake 2.8.12, g++ 4.8.4) and these instructions apply to that OS
     * For Fedora build dependencies see [Issue #466](https://github.com/cztomczak/cefpython/issues/466#issuecomment-419794341)
@@ -220,16 +222,22 @@ requirements common for all platforms.
 
 ### Mac
 
-* MacOS 10.9+, Xcode5+ and Xcode command line tools. Only 64-bit builds
+* **Python 3.7 or later** (tested with Python 3.12+)
+* **macOS 10.13+**, Xcode 10+ and Xcode command line tools. Only 64-bit builds
   are supported.
-* Download [ninja](https://github.com/ninja-build/ninja) 1.7.2 or later
-  and add it to PATH.
-* Download [cmake](https://cmake.org/download/) and add it to PATH.
+* Install Xcode command line tools: `xcode-select --install`
+* **Ninja** build system:
+  * Download [ninja](https://github.com/ninja-build/ninja/releases) 1.7.2 or later and add to PATH, OR
+  * Install via Homebrew: `brew install ninja`
+* **CMake**: Download from https://cmake.org/download/ or install via Homebrew: `brew install cmake`
+* **Hatch** Python project manager: `pip3 install hatch`
 
 
 ### All platforms
 
-* Install/update dependencies for the tools by executing:
+* **Python 3.7+** is required (tested with Python 3.12+)
+* **Hatch** for modern build system: `pip install hatch`
+* For legacy build scripts, install dependencies with:
   `cd cefpython/tools/ && pip install --upgrade -r requirements.txt`.
   On Linux use `sudo`. You should run it each time you update to newer
   cefpython version to avoid issues.

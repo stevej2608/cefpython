@@ -20,7 +20,7 @@ cdef public cpp_bool CookieAccessFilter_CanSendCookie(
     cdef object callback
     cdef py_bool retval
     try:
-        Debug("CookieAccessFilter_CanSendCookie")
+        Debug(<py_string>"CookieAccessFilter_CanSendCookie")
         # Issue #455: CefRequestHandler callbacks still executed after
         # browser was closed.
         if IsBrowserClosed(cef_browser):
@@ -30,7 +30,7 @@ cdef public cpp_bool CookieAccessFilter_CanSendCookie(
         frame = GetPyFrame(cef_frame)
         request = CreatePyRequest(cef_request)
         cookie = CreatePyCookie(cef_cookie)
-        callback = browser.GetClientCallback("CanSendCookie")
+        callback = browser.GetClientCallback(<py_string>"CanSendCookie")
         if callback:
             retval = callback(
                     browser=browser,
@@ -70,7 +70,7 @@ cdef public cpp_bool CookieAccessFilter_CanSaveCookie(
         request = CreatePyRequest(cef_request)
         response = CreatePyResponse(cef_response)
         cookie = CreatePyCookie(cef_cookie)
-        callback = browser.GetClientCallback("CanSaveCookie")
+        callback = browser.GetClientCallback(<py_string>"CanSaveCookie")
         if callback:
             retval = callback(
                     browser=browser,

@@ -478,9 +478,9 @@ def Initialize(applicationSettings=None, commandLineSwitches=None, **kwargs):
         # cdef CefString cef_module_dir
         # PyToCefString(py_module_dir, cef_module_dir)
         # CefOverridePath(PK_DIR_EXE, cef_module_dir)\
-        #         or Debug("ERROR: CefOverridePath failed")
+        #         or Debug(<py_string>"ERROR: CefOverridePath failed")
         # CefOverridePath(PK_DIR_MODULE, cef_module_dir)\
-        #         or Debug("ERROR: CefOverridePath failed")
+        #         or Debug(<py_string>"ERROR: CefOverridePath failed")
     # END IF UNAME_SYSNAME == "Linux":
 
     if not application_settings:
@@ -501,7 +501,7 @@ def Initialize(applicationSettings=None, commandLineSwitches=None, **kwargs):
         if application_settings["log_severity"] <= LOGSEVERITY_INFO:
             g_debug = True
 
-    Debug("Initialize() called")
+    Debug(<py_string>"Initialize() called")
 
     # Additional initialization on Mac, see util_mac.mm.
     IF UNAME_SYSNAME == "Darwin":
@@ -619,15 +619,15 @@ def Initialize(applicationSettings=None, commandLineSwitches=None, **kwargs):
     SetApplicationSettings(application_settings, &cefApplicationSettings)
 
     # External message pump
-    if GetAppSetting("external_message_pump")\
+    if GetAppSetting(<py_string>"external_message_pump")\
             and not g_external_message_pump.get():
-        Debug("Create external message pump")
+        Debug(<py_string>"Create external message pump")
         global g_external_message_pump
         # Using .reset() here to assign new instance was causing
         # MainMessageLoopExternalPump destructor to be called. Strange.
         g_external_message_pump = MainMessageLoopExternalPump.Create()
 
-    Debug("CefInitialize()")
+    Debug(<py_string>"CefInitialize()")
     cdef cpp_bool ret
     with nogil:
         ret = CefInitialize(cefMainArgs, cefApplicationSettings, cefApp, NULL)
@@ -636,7 +636,7 @@ def Initialize(applicationSettings=None, commandLineSwitches=None, **kwargs):
     g_cef_initialized = True
 
     if not ret:
-        Debug("CefInitialize() failed")
+        Debug(<py_string>"CefInitialize() failed")
 
     IF UNAME_SYSNAME == "Linux":
         # Install by default.
@@ -666,7 +666,7 @@ def CreateBrowserSync(windowInfo=None,
     for kwarg in kwargs:
         raise Exception("Invalid argument: "+kwarg)
 
-    Debug("CreateBrowserSync() called")
+    Debug(<py_string>"CreateBrowserSync() called")
     assert IsThread(TID_UI), (
             "cefpython.CreateBrowserSync() may only be called on the UI thread")
 
@@ -683,7 +683,7 @@ def CreateBrowserSync(windowInfo=None,
         # noinspection PyUnresolvedReferences
         cef_window = CefWindow.CreateTopLevelWindow(
                 <CefRefPtr[CefWindowDelegate]?>NULL)
-        Debug("CefWindow.GetChildViewCount = "
+        Debug(<py_string>"CefWindow.GetChildViewCount = "
               +str(cef_window.get().GetChildViewCount()))
 
         cef_window.get().CenterWindow(CefSize(800, 600))
@@ -702,7 +702,7 @@ def CreateBrowserSync(windowInfo=None,
         cef_window.get().RequestFocus()
         windowInfo = WindowInfo()
         windowInfo.SetAsChild(cef_window.get().GetWindowHandle())
-        Debug("CefWindow handle = "
+        Debug(<py_string>"CefWindow handle = "
               +str(<uintptr_t>cef_window.get().GetWindowHandle()))
     """
 
@@ -735,7 +735,7 @@ def CreateBrowserSync(windowInfo=None,
     cdef CefString cefNavigateUrl
     PyToCefString(navigateUrl, cefNavigateUrl)
 
-    Debug("CefBrowser::CreateBrowserSync()")
+    Debug(<py_string>"CefBrowser::CreateBrowserSync()")
     cdef CefRefPtr[ClientHandler] clientHandler =\
             <CefRefPtr[ClientHandler]?>new ClientHandler()
     cdef CefRefPtr[CefBrowser] cefBrowser
@@ -768,12 +768,12 @@ def CreateBrowserSync(windowInfo=None,
                 cefRequestContext)
 
     if not cefBrowser or not cefBrowser.get():
-        Debug("CefBrowser::CreateBrowserSync() failed")
+        Debug(<py_string>"CefBrowser::CreateBrowserSync() failed")
         return None
     else:
-        Debug("CefBrowser::CreateBrowserSync() succeeded")
+        Debug(<py_string>"CefBrowser::CreateBrowserSync() succeeded")
 
-    Debug("CefBrowser window handle = "
+    Debug(<py_string>"CefBrowser window handle = "
           +str(<uintptr_t>cefBrowser.get().GetHost().get().GetWindowHandle()))
 
     # Make a copy as browserSettings is a reference only that might
@@ -818,7 +818,7 @@ def CreateBrowserSync(windowInfo=None,
     return pyBrowser
 
 def MessageLoop():
-    Debug("MessageLoop()")
+    Debug(<py_string>"MessageLoop()")
 
     if not g_MessageLoop_called:
         global g_MessageLoop_called
@@ -850,12 +850,12 @@ def SingleMessageLoop():
     MessageLoopWork()
 
 def QuitMessageLoop():
-    Debug("QuitMessageLoop()")
+    Debug(<py_string>"QuitMessageLoop()")
     with nogil:
         CefQuitMessageLoop()
 
 def Shutdown():
-    Debug("Shutdown()")
+    Debug(<py_string>"Shutdown()")
 
     # Run some message loop work, force closing browsers and then run
     # some message loop work again for the browsers to close cleanly.
@@ -913,7 +913,7 @@ def Shutdown():
         for browserId in browsers_list:
             browser = GetPyBrowserById(browserId)
             if browser and browserId not in g_closed_browsers:
-                Debug("WARNING: Browser was not closed with CloseBrowser call."
+                Debug(<py_string>"WARNING: Browser was not closed with CloseBrowser call."
                       " Will close it safely now, but this will delay CEF"
                       " shutdown by 0.2 sec.")
                 browser.CloseBrowser(True)
@@ -935,23 +935,23 @@ def Shutdown():
     # If the the two code blocks above, that tried to close browsers
     # and free CEF references, failed, then display an error about it!
     if len(g_pyBrowsers):
-        NonCriticalError("Shutdown called, but there are still browser"
+        NonCriticalError(<py_string>"Shutdown called, but there are still browser"
                          " references alive")
 
     # Release shared request context. In the past this was sometimes
     # causing segmentation fault. See Issue #333:
     # https://github.com/cztomczak/cefpython/issues/333
-    # Debug("Free g_shared_request_context")
+    # Debug(<py_string>"Free g_shared_request_context")
     # g_shared_request_context.Assign(NULL)
 
     # Release external message pump before CefShutdown, so that
     # message pump timer is killed.
     if g_external_message_pump.get():
-        Debug("Reset external message pump")
+        Debug(<py_string>"Reset external message pump")
         # Reset will set it to NULL
         g_external_message_pump.reset()
 
-    Debug("CefShutdown()")
+    Debug(<py_string>"CefShutdown()")
     with nogil:
         CefShutdown()
 

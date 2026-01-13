@@ -9,7 +9,7 @@ cdef public void App_OnBeforeCommandLineProcessing_BrowserProcess(
         ) except * with gil:
     try:
         AppendSwitchesToCommandLine(cefCommandLine, g_commandLineSwitches)
-        Debug("App_OnBeforeCommandLineProcessing_BrowserProcess()")
+        Debug(<py_string>"App_OnBeforeCommandLineProcessing_BrowserProcess()")
     except:
         (exc_type, exc_value, exc_trace) = sys.exc_info()
         sys.excepthook(exc_type, exc_value, exc_trace)

@@ -15,7 +15,7 @@ cdef public void LoadHandler_OnLoadingStateChange(
     cdef object callback
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnLoadingStateChange")
-        callback = pyBrowser.GetClientCallback("OnLoadingStateChange")
+        callback = pyBrowser.GetClientCallback(<py_string>"OnLoadingStateChange")
         if callback:
             callback(browser=pyBrowser,
                      is_loading=isLoading,
@@ -35,7 +35,7 @@ cdef public void LoadHandler_OnLoadStart(
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnLoadStart")
         pyFrame = GetPyFrame(cefFrame)
-        clientCallback = pyBrowser.GetClientCallback("OnLoadStart")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"OnLoadStart")
         if clientCallback:
             clientCallback(browser=pyBrowser, frame=pyFrame)
     except:
@@ -53,7 +53,7 @@ cdef public void LoadHandler_OnLoadEnd(
     try:
         pyBrowser = GetPyBrowser(cefBrowser, "OnLoadEnd")
         pyFrame = GetPyFrame(cefFrame)
-        clientCallback = pyBrowser.GetClientCallback("OnLoadEnd")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"OnLoadEnd")
         if clientCallback:
             clientCallback(browser=pyBrowser,
                            frame=pyFrame,
@@ -81,7 +81,7 @@ cdef public void LoadHandler_OnLoadError(
         pyBrowser = GetPyBrowser(cefBrowser, "OnLoadError")
         pyFrame = GetPyFrame(cefFrame)
         errorTextOut = [CefToPyString(cefErrorText)]
-        clientCallback = pyBrowser.GetClientCallback("OnLoadError")
+        clientCallback = pyBrowser.GetClientCallback(<py_string>"OnLoadError")
         if clientCallback:
             clientCallback(
                     browser=pyBrowser,
