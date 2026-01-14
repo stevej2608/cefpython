@@ -49,7 +49,7 @@ def main():
     # Step 2: Build C++ libraries and Cython extensions
     run_step(
         "Build libraries",
-        f"{sys.executable} tools/build.py 123.0 --fast"
+        f"{sys.executable} tools/build_libs_only.py 123.0 --fast"
     )
 
     # Step 3: Build wheel using Hatch's native builder

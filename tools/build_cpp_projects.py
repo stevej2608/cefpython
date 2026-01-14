@@ -50,7 +50,7 @@ COMPILER_ARGS = [
     "/std:c++17",
 ]
 subprocess_COMPILER_ARGS = [
-    "/MT",
+    "/MD",
     "/std:c++17",
 ]
 
@@ -181,7 +181,7 @@ def build_subprocess_executable():
                                  output_progname="subprocess",
                                  output_dir=BUILD_SUBPROCESS,
                                  libraries=["libcef",
-                                            "libcef_dll_wrapper_MT"],
+                                            "libcef_dll_wrapper_MD"],
                                  library_dirs=[lib_dir, lib_dir_vs],
                                  # TODO linker flags for Linux/Mac
                                  extra_preargs=None,

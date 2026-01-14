@@ -149,9 +149,42 @@ dependencies = [
 all = "python tools/build_all.py"
 # Individual steps (can be run separately)
 setup-cef = "python tools/setup_cef.py"
-build-libs = "python tools/build.py 123.0 --fast"
-build-wheel = "python tools/build_wheel.py"
+build-libs = "python tools/build_libs_only.py 123.0 --fast"
+build-libs-with-tests = "python tools/build.py 123.0 --fast"
+build-wheel = "hatch build --target wheel"
 checksums = "python tools/generate_checksums.py"
+# Prepare multi-version build environments
+prepare-envs = "python tools/prepare_build_envs.py"
+
+# Multi-version build environment with Python version matrix
+[tool.hatch.envs.build-matrix]
+description = "Build wheels for multiple Python versions"
+detached = true
+dependencies = [
+    "cython>=3.0.12,<4.0",
+    "pillow>=9.0",
+    "setuptools>=65.0",
+]
+
+# Define Python version matrix
+[[tool.hatch.envs.build-matrix.matrix]]
+python = ["3.11", "3.12", "3.13"]
+
+[tool.hatch.envs.build-matrix.scripts]
+# Build for specific Python version
+wheel = "hatch build --target wheel"
+# Complete build including CEF setup (without tests)
+complete = [
+    "python tools/setup_cef.py",
+    "python tools/build_libs_only.py 123.0 --fast",
+    "hatch build --target wheel",
+]
+# Complete build with tests (may fail if dependencies missing)
+complete-with-tests = [
+    "python tools/setup_cef.py",
+    "python tools/build.py 123.0 --fast",
+    "hatch build --target wheel",
+]
 
 [tool.hatch.envs.test]
 dependencies = [

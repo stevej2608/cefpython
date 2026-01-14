@@ -178,9 +178,9 @@ class CefPythonBuildHook(BuildHookInterface):
         """Build the Cython extension module."""
         self.app.display_info("Building Cython extension...")
 
-        # Run the build script
+        # Run the build script (without tests)
         result = subprocess.run(
-            [sys.executable, "tools/build.py", self.version, "--fast"],
+            [sys.executable, "tools/build_libs_only.py", self.version, "--fast"],
             cwd=str(self.root),
             capture_output=True,
             text=True,

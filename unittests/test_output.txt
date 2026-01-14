@@ -1,0 +1,104 @@
+ci_headless_test (unittest.loader._FailedTest.ci_headless_test) ... ERROR
+issue517 (unittest.loader._FailedTest.issue517) ... ERROR
+main_test (unittest.loader._FailedTest.main_test) ... ERROR
+osr_test (unittest.loader._FailedTest.osr_test) ... ERROR
+test_unittest1 (unittest_test.Test.test_unittest1) ... ok
+test_unittest2 (unittest_test.Test.test_unittest2) ... ok
+test_unittest3 (unittest_test.Test.test_unittest3) ... ok
+
+======================================================================
+ERROR: ci_headless_test (unittest.loader._FailedTest.ci_headless_test)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: ci_headless_test
+Traceback (most recent call last):
+  File "D:\src\py\cefpython\unittests\ci_headless_test.py", line 13, in <module>
+    import cefpython3 as cef
+ModuleNotFoundError: No module named 'cefpython3'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "D:\src\py\cefpython\unittests\ci_headless_test.py", line 16, in <module>
+    sys.exit(1)
+SystemExit: 1
+
+
+======================================================================
+ERROR: issue517 (unittest.loader._FailedTest.issue517)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: issue517
+Traceback (most recent call last):
+  File "C:\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "D:\src\py\cefpython\unittests\issue517.py", line 2, in <module>
+    from cefpython3 import cefpython as cef
+ModuleNotFoundError: No module named 'cefpython3'
+
+
+======================================================================
+ERROR: main_test (unittest.loader._FailedTest.main_test)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: main_test
+Traceback (most recent call last):
+  File "C:\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "D:\src\py\cefpython\unittests\main_test.py", line 10, in <module>
+    from _common import *
+  File "D:\src\py\cefpython\unittests\_common.py", line 5, in <module>
+    from cefpython3 import cefpython as cef
+ModuleNotFoundError: No module named 'cefpython3'
+
+
+======================================================================
+ERROR: osr_test (unittest.loader._FailedTest.osr_test)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: osr_test
+Traceback (most recent call last):
+  File "C:\Python312\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "D:\src\py\cefpython\unittests\osr_test.py", line 10, in <module>
+    from _common import *
+  File "D:\src\py\cefpython\unittests\_common.py", line 5, in <module>
+    from cefpython3 import cefpython as cef
+ModuleNotFoundError: No module named 'cefpython3'
+
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.000s
+
+FAILED (errors=4)
+ERROR: cefpython3 module not found. Install it first.
+test_isolated1 (isolated_test.IsolatedTest1.test_isolated1) ... ok
+test_isolated2 (isolated_test.IsolatedTest1.test_isolated2) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.000s
+
+OK
+ERROR: cefpython3 module not found. Install it first.
+test_isolated3 (isolated_test.IsolatedTest2.test_isolated3) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK
+ERROR: cefpython3 module not found. Install it first.
+----------------------------------------------------------------------
+[_test_runner.py] CEF Python -unknown-
+[_test_runner.py] Python 3.12.9 64bit
+[_test_runner.py] Ran 6 tests in total
+[_test_runner.py] FAILED (errors=4)
