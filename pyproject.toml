@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cefpython3"
-version = "123.0b1"
+version = "123.0b2"
 description = "Python bindings for the Chromium Embedded Framework (CEF)"
 readme = "DISTRIBUTION_README.md"
 license = {file = "License"}
