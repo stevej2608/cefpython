@@ -75,7 +75,8 @@ class CefPythonBuildHook(BuildHookInterface):
             self.app.display_info("Skipping build steps, using existing package")
         else:
             self.app.display_info("Starting CEF Python build process...")
-            self._build_native_libraries()
+            # Note: build_libs_only.py handles both C++ and Cython builds in the correct order
+            # It first builds Cython to generate headers, then builds C++ projects
             self._build_cython_extension()
             self._create_installer_package()
 

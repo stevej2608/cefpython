@@ -151,6 +151,7 @@ dependencies = [
 all = "python tools/build_all.py"
 # Individual steps (can be run separately)
 setup-cef = "python tools/setup_cef.py"
+setup-cef-windows = "python tools/setup_cef.py"
 build-libs = "python tools/build_libs_only.py 123.0 --fast"
 build-libs-with-tests = "python tools/build.py 123.0 --fast"
 build-wheel = "hatch build --target wheel"
@@ -228,6 +229,6 @@ directives = { language_level = "3", embedsignature = true }
 # Platform-specific settings
 [tool.hatch.envs.build.env-vars]
 CEF_VERSION = "123.0.7+g6a21509+chromium-123.0.6312.46"
-CFLAGS = "-std=gnu++17 -O3 -DNDEBUG"
+CFLAGS = "-O3 -DNDEBUG"
 CXXFLAGS = "-std=gnu++17 -O3 -DNDEBUG"
 LDFLAGS = "-flto"
