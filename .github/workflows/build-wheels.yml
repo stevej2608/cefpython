@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-13]  # macos-13 is Intel x86_64, required for CEF 123.0
+        os: [ubuntu-latest, windows-latest, macos-15-large]  # macos-15-large is Intel x86_64, required for CEF 123.0
         python-version: ['3.11', '3.12', '3.13', '3.14']
 
     steps:
@@ -110,6 +110,20 @@ jobs:
       - name: Build wheel
         run: |
           hatch build --target wheel
+
+      # Fix Linux wheel platform tag (linux_x86_64 -> manylinux)
+      - name: Fix wheel platform tag (Linux only)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          for whl in dist/*-linux_x86_64.whl; do
+            if [ -f "$whl" ]; then
+              new_whl=$(echo "$whl" | sed 's/-linux_x86_64\.whl$/-manylinux_2_17_x86_64.manylinux2014_x86_64.whl/')
+              mv "$whl" "$new_whl"
+              echo "Renamed: $(basename $whl) -> $(basename $new_whl)"
+            fi
+          done
+          ls -lh dist/
 
       # Test the built wheel
       - name: Install wheel for testing
