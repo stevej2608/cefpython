@@ -168,7 +168,7 @@ dependencies = [
 
 # Define Python version matrix
 [[tool.hatch.envs.build-matrix.matrix]]
-python = ["3.11", "3.12", "3.13"]
+python = ["3.11", "3.12", "3.13", "3.14"]
 
 [tool.hatch.envs.build-matrix.scripts]
 # Build for specific Python version
