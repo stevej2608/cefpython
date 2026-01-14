@@ -52,10 +52,10 @@ def main():
         f"{sys.executable} tools/build_libs_only.py 123.0 --fast"
     )
 
-    # Step 3: Build wheel using Hatch's native builder
+    # Step 3: Build wheel using Python build module
     run_step(
         "Build wheel",
-        "hatch build --target wheel"
+        f"{sys.executable} -m build --wheel --no-isolation"
     )
 
     # Step 4: Generate checksums

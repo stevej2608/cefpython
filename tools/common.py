@@ -250,6 +250,17 @@ def get_python_path():
 
 
 def get_python_include_path():
+    # Use sysconfig for reliable Python include path detection
+    # This works correctly with virtual environments, pyenv, system Python, etc.
+    try:
+        import sysconfig
+        include_path = sysconfig.get_path("include")
+        if include_path and os.path.isfile(os.path.join(include_path, "Python.h")):
+            return include_path
+    except (ImportError, KeyError):
+        pass
+
+    # Fallback to manual detection (legacy support)
     # 1) C:\Python27\include
     # 2) ~/.pyenv/versions/2.7.13/bin/python
     #    ~/.pyenv/versions/2.7.13/include/python2.7

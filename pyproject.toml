@@ -2,7 +2,7 @@
 requires = [
     "hatchling",
     "hatch-cython>=0.5.0",
-    "cython>=3.0.12,<4.0",
+    "cython>=3.2.4,<4.0",
 ]
 build-backend = "hatchling.build"
 
@@ -38,7 +38,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Cython",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -139,9 +138,12 @@ clean = "rm -rf build/build_cefpython build/temp.* dist/ *.egg-info && find . -t
 description = "Environment for building the complete package"
 detached = true
 dependencies = [
-    "cython>=3.0.12,<4.0",
+    "hatchling",
+    "hatch-cython>=0.5.0",
+    "cython>=3.2.4,<4.0",
     "pillow>=9.0",
     "setuptools>=65.0",
+    "build>=1.0",
 ]
 
 [tool.hatch.envs.build.scripts]
@@ -161,29 +163,32 @@ prepare-envs = "python tools/prepare_build_envs.py"
 description = "Build wheels for multiple Python versions"
 detached = true
 dependencies = [
-    "cython>=3.0.12,<4.0",
+    "hatchling",
+    "hatch-cython>=0.5.0",
+    "cython>=3.2.4,<4.0",
     "pillow>=9.0",
     "setuptools>=65.0",
+    "build>=1.0",
 ]
 
 # Define Python version matrix
 [[tool.hatch.envs.build-matrix.matrix]]
-python = ["3.11", "3.12", "3.13", "3.14"]
+python = ["3.11", "3.12", "3.13"]
 
 [tool.hatch.envs.build-matrix.scripts]
 # Build for specific Python version
-wheel = "hatch build --target wheel"
+wheel = "python -m build --wheel --no-isolation"
 # Complete build including CEF setup (without tests)
 complete = [
     "python tools/setup_cef.py",
     "python tools/build_libs_only.py 123.0 --fast",
-    "hatch build --target wheel",
+    "python -m build --wheel --no-isolation",
 ]
 # Complete build with tests (may fail if dependencies missing)
 complete-with-tests = [
     "python tools/setup_cef.py",
     "python tools/build.py 123.0 --fast",
-    "hatch build --target wheel",
+    "python -m build --wheel --no-isolation",
 ]
 
 [tool.hatch.envs.test]
