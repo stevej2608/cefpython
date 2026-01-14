@@ -85,55 +85,60 @@ def main():
         os.chdir(build_path)
 
         if CEF_POSTFIX2 == "windows64":
-            # Try Ninja first (works with VS Build Tools), then fall back to VS generators
+            # Try Visual Studio generators first, then Ninja as fallback
             cmake_success = False
             build_config = None
 
-            # Try Ninja generator (requires running from VS Developer Command Prompt/PowerShell)
-            try:
-                print("Trying CMake with Ninja generator...")
-                subprocess.run(["cmake", "..", "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release",
-                              "-DCEF_RUNTIME_LIBRARY_FLAG=/MD"],
-                             check=True, capture_output=True)
-                cmake_success = True
-                build_config = "ninja"
-                print("Successfully configured with Ninja")
-            except (subprocess.CalledProcessError, FileNotFoundError):
-                # Clean up before trying next generator
-                if os.path.exists("CMakeCache.txt"):
-                    os.remove("CMakeCache.txt")
-                if os.path.exists("CMakeFiles"):
-                    shutil.rmtree("CMakeFiles")
+            # Try Visual Studio generators (more reliable on Windows)
+            for generator in ["Visual Studio 17 2022", "Visual Studio 16 2019"]:
+                try:
+                    print(f"Trying CMake with {generator}...")
+                    subprocess.run(["cmake", "..", "-G", generator, "-A", "x64"], check=True)
+                    cmake_success = True
+                    build_config = "vs"
+                    print(f"Successfully configured with {generator}")
+                    break
+                except subprocess.CalledProcessError:
+                    # Clean up before trying next generator
+                    if os.path.exists("CMakeCache.txt"):
+                        os.remove("CMakeCache.txt")
+                    if os.path.exists("CMakeFiles"):
+                        shutil.rmtree("CMakeFiles")
+                    continue
 
-                # Try Visual Studio generators
-                for generator in ["Visual Studio 17 2022", "Visual Studio 16 2019"]:
-                    try:
-                        print(f"Trying CMake with {generator}...")
-                        subprocess.run(["cmake", "..", "-G", generator, "-A", "x64"], check=True)
-                        cmake_success = True
-                        build_config = "vs"
-                        break
-                    except subprocess.CalledProcessError:
-                        # Clean up CMakeCache.txt and CMakeFiles before trying next generator
-                        if os.path.exists("CMakeCache.txt"):
-                            os.remove("CMakeCache.txt")
-                        if os.path.exists("CMakeFiles"):
-                            shutil.rmtree("CMakeFiles")
-                        continue
+            # If VS generators failed, try Ninja with explicit MSVC compiler
+            if not cmake_success:
+                try:
+                    print("Trying CMake with Ninja generator...")
+                    # Explicitly set compilers to avoid picking up MinGW
+                    subprocess.run([
+                        "cmake", "..", "-G", "Ninja",
+                        "-DCMAKE_BUILD_TYPE=Release",
+                        "-DCEF_RUNTIME_LIBRARY_FLAG=/MD",
+                        "-DCMAKE_C_COMPILER=cl.exe",
+                        "-DCMAKE_CXX_COMPILER=cl.exe"
+                    ], check=True, capture_output=True)
+                    cmake_success = True
+                    build_config = "ninja"
+                    print("Successfully configured with Ninja")
+                except (subprocess.CalledProcessError, FileNotFoundError):
+                    if os.path.exists("CMakeCache.txt"):
+                        os.remove("CMakeCache.txt")
+                    if os.path.exists("CMakeFiles"):
+                        shutil.rmtree("CMakeFiles")
 
             if not cmake_success:
                 print("\nERROR: Could not configure CMake.")
                 print("Please ensure one of the following:")
-                print("  1. Run from Visual Studio Developer Command Prompt/PowerShell")
-                print("  2. Install Ninja build system (choco install ninja or download from github.com/ninja-build/ninja)")
-                print("  3. Install full Visual Studio 2019 or 2022 (Community Edition)")
+                print("  1. Install Visual Studio 2019 or 2022 (Community Edition)")
+                print("  2. Run from Visual Studio Developer Command Prompt/PowerShell with Ninja installed")
                 sys.exit(1)
 
             # Build based on which configuration succeeded
-            if build_config == "ninja":
-                subprocess.run(["ninja", "libcef_dll_wrapper"], check=True)
-            else:  # VS generator
+            if build_config == "vs":
                 subprocess.run(["cmake", "--build", ".", "--config", "Release", "--target", "libcef_dll_wrapper"], check=True)
+            else:  # ninja
+                subprocess.run(["ninja", "libcef_dll_wrapper"], check=True)
         else:
             # Linux/Mac: use Ninja
             subprocess.run(["cmake", "..", "-G", "Ninja", "-DCMAKE_BUILD_TYPE=Release"], check=True)

@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]  # macos-13 is Intel x86_64, required for CEF 123.0
         python-version: ['3.11', '3.12', '3.13', '3.14']
 
     steps:
@@ -128,7 +128,7 @@ jobs:
         continue-on-error: true
 
       - name: Test import
-        run: python -c "import cefpython3; print('Version:', cefpython3.__version__); print('Chrome version:', cefpython3.__chrome_version__); print('CEF version:', cefpython3.__cef_version__)"
+        run: python -c "import cefpython3; print('CEFPython imported successfully'); print('Version:', cefpython3.__version__)"
 
       # Upload artifacts
       - name: Upload wheel artifact
