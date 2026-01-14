@@ -104,6 +104,10 @@ def main():
 
     copy_cpp_extension_dependencies_issue359(PKG_DIR)
 
+    # Strip debug symbols from Linux binaries to reduce package size
+    if LINUX:
+        strip_debug_symbols_linux(PKG_DIR)
+
     print("[make_installer.py] Done. Installer package created: {setup_dir}"
           .format(setup_dir=SETUP_DIR))
 
@@ -334,6 +338,57 @@ def create_empty_log_file(log_file):
         print("[make_installer.py] {command}"
               .format(command=command.replace(SETUP_DIR, "")))
         subprocess.check_call(command, shell=True)
+
+
+def strip_debug_symbols_linux(pkg_dir):
+    """Strip debug symbols from .so files on Linux to reduce package size.
+
+    Linux libcef.so and other .so files from CEF contain debug symbols that
+    significantly increase package size (libcef.so alone is 1.3GB unstripped
+    vs 339MB stripped). This function strips debug info from all .so files.
+
+    See Issue #262 for original libcef.so stripping implementation.
+    """
+    print("[make_installer.py] Stripping debug symbols from .so files...")
+
+    # Find all .so files in the package directory
+    so_files = glob.glob(os.path.join(pkg_dir, "*.so"))
+    so_files.extend(glob.glob(os.path.join(pkg_dir, "*.so.*")))
+
+    if not so_files:
+        print("[make_installer.py] WARNING: No .so files found to strip")
+        return
+
+    for so_file in so_files:
+        filename = os.path.basename(so_file)
+
+        # Get file size before stripping
+        size_before = os.path.getsize(so_file)
+        size_before_mb = size_before / (1024 * 1024)
+
+        print("[make_installer.py] Stripping {file} ({size:.1f} MB)..."
+              .format(file=filename, size=size_before_mb))
+
+        # Run strip command to remove debug symbols
+        # --strip-debug removes debug symbols but keeps function symbols
+        # This is safer than --strip-all which removes all symbols
+        command = "strip --strip-debug {file}".format(file=so_file)
+        try:
+            subprocess.check_call(command, shell=True)
+
+            # Show size reduction
+            size_after = os.path.getsize(so_file)
+            size_after_mb = size_after / (1024 * 1024)
+            reduction_pct = ((size_before - size_after) / size_before) * 100
+
+            print("[make_installer.py]   -> Stripped to {size:.1f} MB "
+                  "({reduction:.1f}% reduction)"
+                  .format(size=size_after_mb, reduction=reduction_pct))
+        except subprocess.CalledProcessError as e:
+            print("[make_installer.py] WARNING: Failed to strip {file}: {error}"
+                  .format(file=filename, error=str(e)))
+
+    print("[make_installer.py] Debug symbol stripping complete")
 
 
 def copy_cpp_extension_dependencies_issue359(pkg_dir):
