@@ -425,7 +425,8 @@ def _detect_distrib_dir():
 
 def get_version_from_command_line_args(caller_script, ignore_error=False):
     args = " ".join(sys.argv)
-    match = re.search(r"\b(\d+)\.\d+\b", args)
+    # Support PEP 440 pre-release versions: 123.0, 123.0a1, 123.0b1, 123.0rc1
+    match = re.search(r"\b(\d+)\.\d+(?:(?:a|b|rc)\d+)?\b", args)
     if match:
         version = match.group(0)
         major = match.group(1)

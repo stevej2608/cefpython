@@ -35,7 +35,7 @@ class CefPythonBuildHook(BuildHookInterface):
         super().__init__(*args, **kwargs)
         self.build_dir = Path(self.root) / "build"
         self.src_dir = Path(self.root) / "src"
-        self.version = "123.0"
+        self.version = self.metadata.version
 
     def _detect_cef_directory(self) -> Path:
         """Detect CEF binaries directory dynamically based on platform."""
