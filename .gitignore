@@ -1,22 +1,41 @@
-.idea/
-build/
-dist/
-venv/
-*.log
+# Claude Code configuration and credentials
+.claude/
+tmp/.claude/
+
+# Python
 __pycache__/
-*.pyc
-cefclient
-webcache/
-examples/screenshot.png
-examples/pyinstaller/build/
-examples/pyinstaller/dist/
-examples/GPUCache/
-examples/blob_storage/
-examples/webrtc_event_logs/
-unittests/GPUCache/
-unittests/blob_storage/
-unittests/webrtc_event_logs/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
-MediaDeviceSalts
-MediaDeviceSalts-journal
-/.venv
+Thumbs.db
