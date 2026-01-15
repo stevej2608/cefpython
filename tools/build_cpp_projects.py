@@ -52,7 +52,6 @@ COMPILER_ARGS = [
 subprocess_COMPILER_ARGS = [
     "/MD",
     "/std:c++17",
-    "/GL-",  # Disable whole program optimization to be compatible with /LTCG:OFF
 ]
 
 # Linker args
@@ -117,6 +116,13 @@ def get_compiler(static=False):
     compiler = new_compiler()
     # Must initialize so that "compile_options" and others are available
     compiler.initialize()
+
+    # Remove /GL (whole program optimization) if present in compile options
+    # This is required for compatibility with /LTCG:OFF linker flag
+    # VS 2022 on GitHub Actions adds /GL by default, but VS 2026 may not
+    if "/GL" in compiler.compile_options:
+        compiler.compile_options.remove("/GL")
+
     if static:
         compiler.compile_options.remove("/MD")
         # Overwrite function that adds /MANIFESTFILE, as for subprocess
