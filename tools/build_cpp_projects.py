@@ -52,6 +52,7 @@ COMPILER_ARGS = [
 subprocess_COMPILER_ARGS = [
     "/MD",
     "/std:c++17",
+    "/GL-",  # Disable whole program optimization to be compatible with /LTCG:OFF
 ]
 
 # Linker args
