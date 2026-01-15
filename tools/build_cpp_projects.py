@@ -58,7 +58,8 @@ subprocess_COMPILER_ARGS = [
 subprocess_LINKER_ARGS = [
     "/MANIFEST:NO",
     "/LARGEADDRESSAWARE",
-    "/LTCG:OFF",  # Disable link-time code generation to avoid LNK1319 errors
+    # Note: /LTCG is automatically added by the linker when linking with libraries
+    # compiled with /GL (like libcef_dll_wrapper_MD.lib). Don't explicitly disable it.
 ]
 
 # Command line args
