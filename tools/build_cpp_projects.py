@@ -117,13 +117,9 @@ def get_compiler(static=False):
     compiler = new_compiler()
     # Must initialize so that "compile_options" and others are available
     compiler.initialize()
-
-    # Remove /GL (whole program optimization) if present in compile options
-    # This is required for compatibility with /LTCG:OFF linker flag
-    # VS 2022 on GitHub Actions adds /GL by default, but VS 2026 may not
-    if "/GL" in compiler.compile_options:
-        compiler.compile_options.remove("/GL")
-
+    # Note: Keep /GL (whole program optimization) if present, as it's needed
+    # for compatibility with prebuilt CEF library (libcef_dll_wrapper_MD.lib)
+    # which was compiled with /GL. The linker will automatically add /LTCG.
     if static:
         compiler.compile_options.remove("/MD")
         # Overwrite function that adds /MANIFESTFILE, as for subprocess
