@@ -455,6 +455,27 @@ class CefPythonBuildHook(BuildHookInterface):
 
         self.app.display_success("Wheel paths configured successfully")
 
+    def finalize(self, version: str, build_data: Dict[str, Any], artifact_path: str) -> str:
+        """Finalize the wheel after building - fix platform tags for PyPI compatibility."""
+        if self.target_name != "wheel":
+            return artifact_path
+
+        artifact = Path(artifact_path)
+        wheel_name = artifact.name
+
+        # On Linux, convert linux_x86_64 to manylinux tag for PyPI compatibility
+        if LINUX and "-linux_x86_64.whl" in wheel_name:
+            new_name = wheel_name.replace(
+                "-linux_x86_64.whl",
+                "-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+            )
+            new_path = artifact.parent / new_name
+            self.app.display_info(f"Finalizing wheel: {wheel_name} -> {new_name}")
+            artifact.rename(new_path)
+            return str(new_path)
+
+        return artifact_path
+
     def clean(self, versions: list[str]) -> None:
         """Clean build artifacts."""
         self.app.display_info("Cleaning build artifacts...")

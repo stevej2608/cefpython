@@ -115,20 +115,6 @@ jobs:
         run: |
           hatch build --target wheel
 
-      # Fix Linux wheel platform tag (linux_x86_64 -> manylinux)
-      - name: Fix wheel platform tag (Linux only)
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          for whl in dist/*-linux_x86_64.whl; do
-            if [ -f "$whl" ]; then
-              new_whl=$(echo "$whl" | sed 's/-linux_x86_64\.whl$/-manylinux_2_17_x86_64.manylinux2014_x86_64.whl/')
-              mv "$whl" "$new_whl"
-              echo "Renamed: $(basename $whl) -> $(basename $new_whl)"
-            fi
-          done
-          ls -lh dist/
-
       # Test the built wheel
       - name: Install wheel for testing
         shell: bash
