@@ -11,6 +11,8 @@ import os
 import sys
 import subprocess
 import shutil
+import platform
+import sysconfig
 from pathlib import Path
 from typing import Any, Dict
 
@@ -36,6 +38,221 @@ class CefPythonBuildHook(BuildHookInterface):
         self.build_dir = Path(self.root) / "build"
         self.src_dir = Path(self.root) / "src"
         self.version = self.metadata.version
+
+    def _print_tooling_report(self) -> None:
+        """Print comprehensive tooling version report for build environment comparison."""
+        self.app.display_info("=" * 70)
+        self.app.display_info("BUILD ENVIRONMENT TOOLING REPORT")
+        self.app.display_info("=" * 70)
+
+        # System information
+        self.app.display_info("")
+        self.app.display_info("--- System Information ---")
+        self.app.display_info(f"Platform: {platform.system()} {platform.release()}")
+        self.app.display_info(f"Platform version: {platform.version()}")
+        self.app.display_info(f"Machine: {platform.machine()}")
+        self.app.display_info(f"Processor: {platform.processor()}")
+
+        # Python information
+        self.app.display_info("")
+        self.app.display_info("--- Python Information ---")
+        self.app.display_info(f"Python version: {sys.version}")
+        self.app.display_info(f"Python executable: {sys.executable}")
+        self.app.display_info(f"Python architecture: {platform.architecture()[0]}")
+        self.app.display_info(f"Python include path: {sysconfig.get_path('include')}")
+        self.app.display_info(f"Python library path: {sysconfig.get_config_var('LIBDIR')}")
+
+        # Cython version
+        self.app.display_info("")
+        self.app.display_info("--- Cython ---")
+        try:
+            import Cython
+            self.app.display_info(f"Cython version: {Cython.__version__}")
+        except ImportError:
+            self.app.display_info("Cython: NOT INSTALLED")
+
+        # Platform-specific compiler information
+        self.app.display_info("")
+        if WINDOWS:
+            self._print_windows_tooling()
+        elif LINUX:
+            self._print_linux_tooling()
+        elif MAC:
+            self._print_macos_tooling()
+
+        # Common tools (CMake, Ninja)
+        self.app.display_info("")
+        self.app.display_info("--- Build Tools ---")
+        self._print_tool_version("cmake", "--version")
+        self._print_tool_version("ninja", "--version")
+        self._print_tool_version("make", "--version")
+        self._print_tool_version("git", "--version")
+
+        # Key environment variables
+        self.app.display_info("")
+        self.app.display_info("--- Key Environment Variables ---")
+        env_vars = [
+            "PATH", "CEF_BINARIES_LIBRARIES",
+            # Windows-specific
+            "VCINSTALLDIR", "VSINSTALLDIR", "VS170COMNTOOLS", "VS160COMNTOOLS",
+            "WindowsSdkDir", "WindowsSDKVersion", "VSCMD_VER",
+            "INCLUDE", "LIB", "LIBPATH",
+            # Unix-specific
+            "CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS",
+            "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH",
+        ]
+        for var in env_vars:
+            value = os.environ.get(var)
+            if value:
+                # Display PATH-like variables as indented lists for readability
+                if var in ("PATH", "INCLUDE", "LIB", "LIBPATH", "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH"):
+                    separator = ";" if WINDOWS else ":"
+                    paths = value.split(separator)
+                    self.app.display_info(f"{var}:")
+                    for path in paths:
+                        if path:  # Skip empty entries
+                            self.app.display_info(f"    {path}")
+                else:
+                    self.app.display_info(f"{var}={value}")
+
+        self.app.display_info("")
+        self.app.display_info("=" * 70)
+        self.app.display_info("END TOOLING REPORT")
+        self.app.display_info("=" * 70)
+        self.app.display_info("")
+
+    def _print_windows_tooling(self) -> None:
+        """Print Windows-specific tooling information."""
+        self.app.display_info("--- Windows Compiler Toolchain ---")
+
+        # MSVC compiler version (cl.exe)
+        try:
+            result = subprocess.run(
+                ["cl"],
+                capture_output=True,
+                text=True,
+                shell=True,
+            )
+            # cl.exe outputs version info to stderr
+            output = result.stderr or result.stdout
+            if output:
+                # Extract first line which contains version info
+                first_line = output.strip().split('\n')[0]
+                self.app.display_info(f"MSVC (cl.exe): {first_line}")
+            else:
+                self.app.display_info("MSVC (cl.exe): Available but no version output")
+        except Exception as e:
+            self.app.display_info(f"MSVC (cl.exe): NOT FOUND or error - {e}")
+
+        # Try to get Visual Studio version from environment
+        vscmd_ver = os.environ.get("VSCMD_VER")
+        if vscmd_ver:
+            self.app.display_info(f"Visual Studio Version (VSCMD_VER): {vscmd_ver}")
+
+        vs_installdir = os.environ.get("VSINSTALLDIR")
+        if vs_installdir:
+            self.app.display_info(f"VS Install Dir: {vs_installdir}")
+
+        # Windows SDK version
+        sdk_version = os.environ.get("WindowsSDKVersion", "").rstrip("\\")
+        if sdk_version:
+            self.app.display_info(f"Windows SDK Version: {sdk_version}")
+
+        sdk_dir = os.environ.get("WindowsSdkDir")
+        if sdk_dir:
+            self.app.display_info(f"Windows SDK Dir: {sdk_dir}")
+
+        # MSVC tools version from VC install dir
+        vc_tools = os.environ.get("VCToolsVersion")
+        if vc_tools:
+            self.app.display_info(f"VC Tools Version: {vc_tools}")
+
+        # Link.exe version
+        try:
+            result = subprocess.run(
+                ["link", "/version"],
+                capture_output=True,
+                text=True,
+                shell=True,
+            )
+            output = (result.stdout or result.stderr).strip()
+            if output:
+                self.app.display_info(f"Linker (link.exe): {output.split(chr(10))[0]}")
+        except Exception:
+            pass
+
+    def _print_linux_tooling(self) -> None:
+        """Print Linux-specific tooling information."""
+        self.app.display_info("--- Linux Compiler Toolchain ---")
+
+        # GCC version
+        self._print_tool_version("gcc", "--version")
+        self._print_tool_version("g++", "--version")
+
+        # ld version
+        self._print_tool_version("ld", "--version")
+
+        # libc version
+        try:
+            import ctypes
+            libc = ctypes.CDLL("libc.so.6")
+            gnu_get_libc_version = libc.gnu_get_libc_version
+            gnu_get_libc_version.restype = ctypes.c_char_p
+            self.app.display_info(f"glibc version: {gnu_get_libc_version().decode()}")
+        except Exception:
+            pass
+
+    def _print_macos_tooling(self) -> None:
+        """Print macOS-specific tooling information."""
+        self.app.display_info("--- macOS Compiler Toolchain ---")
+
+        # Clang version
+        self._print_tool_version("clang", "--version")
+        self._print_tool_version("clang++", "--version")
+
+        # Xcode version
+        try:
+            result = subprocess.run(
+                ["xcodebuild", "-version"],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                self.app.display_info(f"Xcode: {result.stdout.strip().replace(chr(10), ' ')}")
+        except Exception:
+            pass
+
+        # macOS SDK
+        try:
+            result = subprocess.run(
+                ["xcrun", "--show-sdk-version"],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode == 0:
+                self.app.display_info(f"macOS SDK Version: {result.stdout.strip()}")
+        except Exception:
+            pass
+
+    def _print_tool_version(self, tool: str, version_arg: str) -> None:
+        """Print version of a tool if available."""
+        try:
+            result = subprocess.run(
+                [tool, version_arg],
+                capture_output=True,
+                text=True,
+            )
+            output = (result.stdout or result.stderr).strip()
+            if output and result.returncode == 0:
+                # Get first line only for cleaner output
+                first_line = output.split('\n')[0]
+                self.app.display_info(f"{tool}: {first_line}")
+            else:
+                self.app.display_info(f"{tool}: NOT FOUND")
+        except FileNotFoundError:
+            self.app.display_info(f"{tool}: NOT FOUND")
+        except Exception as e:
+            self.app.display_info(f"{tool}: ERROR - {e}")
 
     def _detect_cef_directory(self) -> Path:
         """Detect CEF binaries directory dynamically based on platform."""
@@ -67,6 +284,9 @@ class CefPythonBuildHook(BuildHookInterface):
         # Only run full build for wheel targets, not for editable installs
         if self.target_name != "wheel":
             return
+
+        # Print tooling report at the start of the build
+        self._print_tooling_report()
 
         # Check if installer package already exists
         installer_dir = Path(f"build/cefpython3_{self.version}_{OS_POSTFIX2}")
