@@ -469,14 +469,14 @@ Create or edit `.vscode/settings.json` in your project:
 ```json
 {
     "terminal.integrated.profiles.windows": {
-        "Dev CMD": {
+        "VS 2022 C++ Dev CMD": {
             "path": "cmd.exe",
             "args": [
                 "/k",
                 "C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat"
-            ]
+           ]
         },
-        "Dev PowerShell": {
+        "VS 2022 C++ Dev CMD PowerShell": {
             "path": "powershell.exe",
             "args": [
                 "-NoExit",
@@ -484,8 +484,7 @@ Create or edit `.vscode/settings.json` in your project:
                 "& 'C:\\Program Files (x86)\\Microsoft Visual Studio\\2022\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat'"
             ]
         }
-    },
-    "terminal.integrated.defaultProfile.windows": "Dev CMD"
+    }
 }
 ```
 
