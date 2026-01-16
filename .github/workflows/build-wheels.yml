@@ -73,6 +73,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install hatch
 
+      - name: Setup MSVC Developer Command Prompt
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
       # CEF Binary Caching - CRITICAL for 5.8GB download
       - name: Determine CEF cache key
         id: cef-cache-key
