@@ -93,7 +93,8 @@ def main():
             for generator in ["Visual Studio 17 2022", "Visual Studio 16 2019"]:
                 try:
                     print(f"Trying CMake with {generator}...")
-                    subprocess.run(["cmake", "..", "-G", generator, "-A", "x64"], check=True)
+                    subprocess.run(["cmake", "..", "-G", generator, "-A", "x64",
+                                    "-DCEF_RUNTIME_LIBRARY_FLAG=/MD"], check=True)
                     cmake_success = True
                     build_config = "vs"
                     print(f"Successfully configured with {generator}")
