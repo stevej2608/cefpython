@@ -39,3 +39,4 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+src/compile_time_constants.pxi
