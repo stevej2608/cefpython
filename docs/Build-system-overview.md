@@ -382,7 +382,7 @@ The build system uses Hatch environments defined in `pyproject.toml`.
 
 **Configuration**: `[tool.hatch.envs.build-matrix]`
 
-**Python matrix**: `["3.11", "3.12", "3.13", "3.14"]`
+**Python matrix**: `["3.11", "3.12", "3.13"]`
 
 **Scripts**:
 - `wheel` - Build wheel for specific Python version
