@@ -90,7 +90,7 @@ jobs:
             echo "cache_key=cef-123-macosx64-v1" >> $GITHUB_OUTPUT
           elif [ "${{ runner.os }}" == "Windows" ]; then
             echo "cef_dir=cef123_123.0.7+g6a21509+chromium-123.0.6312.46_windows64" >> $GITHUB_OUTPUT
-            echo "cache_key=cef-123-windows64-v1" >> $GITHUB_OUTPUT
+            echo "cache_key=cef-123-windows64-v2" >> $GITHUB_OUTPUT
           fi
 
       - name: Cache CEF binaries
