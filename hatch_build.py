@@ -409,7 +409,8 @@ class CefPythonBuildHook(BuildHookInterface):
 
         if result.returncode != 0:
             self.app.display_error("Failed to build Cython extension")
-            self.app.display_error(result.stderr)
+            self.app.display_error("STDOUT:\n" + result.stdout)
+            self.app.display_error("STDERR:\n" + result.stderr)
             raise RuntimeError("Cython build failed")
 
         self.app.display_success("Cython extension built successfully")
