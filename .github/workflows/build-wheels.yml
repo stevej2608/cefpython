@@ -3,6 +3,7 @@ name: Build Wheels
 on:
   push:
     branches: [ master, main, cefpython123-* ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ master, main ]
   workflow_dispatch:
