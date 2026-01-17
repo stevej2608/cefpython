@@ -1,0 +1,106 @@
+name: Create Release
+
+on:
+  workflow_run:
+    workflows: ["Build Wheels"]
+    types:
+      - completed
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    # Only run if:
+    # 1. The build workflow completed successfully
+    # 2. The trigger was a tag push starting with 'v'
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download wheel artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: all-wheels
+          path: wheels/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get tag name
+        id: tag
+        run: |
+          TAG="${{ github.event.workflow_run.head_branch }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+          # Check if this is a beta release (contains 'b' or 'beta')
+          if [[ "$TAG" =~ (b[0-9]+|beta) ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: List artifacts
+        run: |
+          echo "Wheels to be released:"
+          ls -la wheels/
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          PRERELEASE="${{ steps.tag.outputs.prerelease }}"
+
+          # Build release notes
+          NOTES="## CEFPython $TAG
+
+          ### Wheels
+
+          | Platform | Python Versions |
+          |----------|-----------------|
+          | Linux (manylinux2014_x86_64) | 3.11, 3.12, 3.13 |
+          | Windows (win_amd64) | 3.11, 3.12, 3.13 |
+          | macOS (macosx_x86_64) | 3.11, 3.12, 3.13 |
+
+          ### Installation
+
+          \`\`\`bash
+          pip install cefpython3
+          \`\`\`
+
+          Or download the wheel for your platform from the assets below.
+
+          ### Checksums
+
+          See \`SHA256SUMS\` and \`MD5SUMS\` files in the release assets.
+          "
+
+          # Create release with appropriate flags
+          if [ "$PRERELEASE" = "true" ]; then
+            gh release create "$TAG" \
+              --title "CEFPython $TAG" \
+              --notes "$NOTES" \
+              --prerelease \
+              wheels/*.whl wheels/SHA256SUMS wheels/MD5SUMS
+          else
+            gh release create "$TAG" \
+              --title "CEFPython $TAG" \
+              --notes "$NOTES" \
+              wheels/*.whl wheels/SHA256SUMS wheels/MD5SUMS
+          fi
+
+      - name: Release summary
+        run: |
+          echo "## Release Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tag:** ${{ steps.tag.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Pre-release:** ${{ steps.tag.outputs.prerelease }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Uploaded Assets" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -1 wheels/*.whl >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
