@@ -33,14 +33,14 @@ Table of contents:
 
 ## Install and run example
 
-You can install with pip. On Linux pip 8.1+ is required. Alternatively
-you can download packages for offline installation from [GitHub Releases](../../../releases).
+You can install with pip. Alternatively you can download packages for
+offline installation from [GitHub Releases](../../../releases).
 
 Run the commands below to install the cefpython3 package, clone
 the repository and run the Hello World example:
 
 ```commandline
-pip install cefpython3==66.0
+pip install cefpython3
 git clone https://github.com/cztomczak/cefpython.git
 cd cefpython/examples/
 python hello_world.py
@@ -149,14 +149,14 @@ a line that overwrites the default exception handler in Python:
 sys.excepthook = cef.ExceptHook  # To shutdown all CEF processes on error
 ```
 
-See Python docs for [sys.excepthook](https://docs.python.org/2/library/sys.html#sys.excepthook).
+See Python docs for [sys.excepthook](https://docs.python.org/3/library/sys.html#sys.excepthook).
 
 The cef.ExceptHook helper function does the following:
 1. Writes exception to "error.log" file
 2. Prints exception
 3. Calls cef.[QuitMessageLoop](../api/cefpython.md#quitmessageloop)
 4. Calls cef.[Shutdown](../api/cefpython.md#shutdown)
-5. Calls [os._exit(1)](https://docs.python.org/2/library/os.html#os._exit) -
+5. Calls [os._exit(1)](https://docs.python.org/3/library/os.html#os._exit) -
    which exits the process with status 1, without calling
    cleanup handlers, flushing stdio buffers, etc.
 
@@ -410,7 +410,7 @@ html_to_data_uri("test", js_callback_1);
 **Communication using http requests**
 
 Python and Javascript can also communicate using http requests
-by running an internal web-server. See for example [SimpleHTTPServer](https://docs.python.org/2/library/simplehttpserver.html)
+by running an internal web-server. See for example [http.server](https://docs.python.org/3/library/http.server.html)
 in Python docs. In upstream CEF there is available a fast built-in
 web server and [Issue #445](../../../issues/445) is to expose its API.
 

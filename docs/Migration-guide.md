@@ -1,7 +1,12 @@
 # Migration guide
 
+> **Note**: This migration guide covers CEF Python versions v49 through v67.
+> For CEF Python v123+ (Chromium 123+), please refer to the
+> [GitHub Releases](../../../releases) page for the latest breaking changes
+> and migration notes.
+
 This migration guide will get you through to make your code work
-with latest CEF Python. This document includes notable changes
+with CEF Python. This document includes notable changes
 that were introduced to cefpython and each topic is prefixed
 with version number in which a change was introduced.
 This migration guide doesn't cover all changes required for your

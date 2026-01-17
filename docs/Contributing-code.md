@@ -56,7 +56,7 @@ minimum that you must do. Please try also testing examples for
 various GUI frameworks.
 
 Pure Python code should be tested using multiple Python versions
-(Python 2 and Python 3 at least). See [Issue #249](../../../issue/249)
+(Python 3.11, 3.12, and 3.13). See [Issue #249](../../../issues/249)
 ("How to use pyenv to manage multiple Python versions on Ubuntu/Mac").
 
 

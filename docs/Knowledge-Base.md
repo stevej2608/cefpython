@@ -3,7 +3,6 @@
 Table of contents:
 * [Notifications about new releases / commits](#notifications-about-new-releases--commits)
 * [Changes in API after CEF updates](#changes-in-api-after-cef-updates)
-* [Differences between Python 2 and Python 3](#differences-between-python-2-and-python-3)
 * [How to enable debug information in examples?](#how-to-enable-debug-information-in-examples)
 * [Remote debugging with Google Chrome instance](#remote-debugging-with-google-chrome-instance)
 * [Debugging using various chrome:// protocol uris](#debugging-using-various-chrome-protocol-uris)
@@ -15,8 +14,8 @@ Table of contents:
 * [Touch and multi-touch support](#touch-and-multi-touch-support)
 * [Black or white browser screen](#black-or-white-browser-screen)
 * [Python crashes with "Segmentation fault" - how to debug?](#python-crashes-with-segmentation-fault---how-to-debug)
-* [Windows XP support](#windows-xp-support)
-* [Mac 32-bit support](#mac-32-bit-support)
+* [Historical: Windows XP support](#historical-windows-xp-support)
+* [Historical: Mac 32-bit support](#historical-mac-32-bit-support)
 * [Security](#security)
 
 
@@ -42,14 +41,7 @@ Due to unavoidable changes in upstream API it is recommended for your setup
 scripts, that for example use PIP to install the cefpython3 package,
 to hardcode the cefpython version string. If for example using PIP's
 `requirements.txt` file then include the cefpython3 package in the
-following format if using e.g. cefpython v57.0: `cefpython3 == 57.0`.
-
-
-## Differences between Python 2 and Python 3
-
-In Python 2 all cefpython strings are byte strings, but in Python 3
-they are all unicode strings. Be aware of this when porting cefpython
-based apps to Python 3, as it may cause issues.
+following format if using e.g. cefpython v123.0: `cefpython3 == 123.0`.
 
 
 ## How to enable debug information in examples?
@@ -123,7 +115,7 @@ The `chrome://` protocol uris give you access to various debugging
 tools. For example if you encounter GPU issues then after the issue
 occured load the `chrome://gpu` to see a list of errors.
 
-Here is a list of supported `chrome://` protocol uris as of v55.2:
+Here is a list of commonly supported `chrome://` protocol uris:
 - chrome://accessibility
 - chrome://appcache-internals
 - chrome://blob-internals
@@ -180,7 +172,7 @@ CEF framework and in the cefpython module. Here are the default
 settings:
 ```
 cefpython_package/
-    cefpython_py27.so
+    cefpython_py311.so
         rpath=@loader_path/
         load:@rpath/Chromium Embedded Framework.framework/Chromium Embedded Framework
     Chromium Embedded Framework.framework/
@@ -303,18 +295,21 @@ bt
 ```
 
 
-## Windows XP support
+## Historical: Windows XP support
+
+> **Note**: This section is historical. CEF Python v123+ requires Python 3.11+,
+> which does not support Windows XP. This information is preserved for users
+> of legacy CEF Python versions.
 
 CEF Python v31.2 was the last version to support Windows XP. This is
 due to Chromium/CEF dropping XP support, last CEF version that
 supported XP was v49.
 
-On XP you should disable GPU acceleration by using the --disable-gpu
-and --disable-gpu-compositing switches. These switches must be passed
-programmatically to cef.Initialize(), see [api/Command Line Switches](../api/CommandLineSwitches.md).
 
+## Historical: Mac 32-bit support
 
-## Mac 32-bit support
+> **Note**: This section is historical. CEF Python v123+ only supports 64-bit
+> platforms. This information is preserved for users of legacy CEF Python versions.
 
 CEF Python v31.2 was the last version to support Mac 32-bit.
 This is due to CEF/Chromium dropping 32-bit support, last CEF version
