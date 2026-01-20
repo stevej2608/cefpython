@@ -291,16 +291,45 @@ if PYTEST_AVAILABLE:
 
 
     def pytest_collection_modifyitems(config, items):
-        """Skip tests that require shared state when running with --forked."""
+        """Group tests that require shared state to run together without forking."""
         if not FORKED_MODE:
             return
 
-        skip_shared_state = pytest.mark.skip(
-            reason="Test requires shared state across methods, incompatible with --forked"
-        )
+        # Reorder items so that requires_shared_state tests from the same class
+        # are grouped together (they'll run without forking via the hook below)
+        shared_state_items = []
+        other_items = []
         for item in items:
             if "requires_shared_state" in item.keywords:
-                item.add_marker(skip_shared_state)
+                shared_state_items.append(item)
+            else:
+                other_items.append(item)
+
+        # Put shared state tests at the end, grouped by class
+        items[:] = other_items + shared_state_items
+
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_runtest_protocol(item, nextitem):
+        """
+        Run tests marked with requires_shared_state without forking.
+
+        When --forked is enabled, pytest-forked wraps each test in a subprocess.
+        For tests that need shared state across methods, we bypass forking by
+        running them directly using the standard protocol.
+
+        Uses tryfirst=True to ensure this runs before pytest-forked's hook.
+        """
+        if not FORKED_MODE:
+            return None  # Let pytest handle normally
+
+        if "requires_shared_state" not in item.keywords:
+            return None  # Let pytest-forked handle this test
+
+        # Run this test without forking by using the standard protocol
+        from _pytest.runner import runtestprotocol
+        runtestprotocol(item, nextitem=nextitem)
+        return True  # We handled it, don't let other hooks run
 
 
 def require_built_cefpython():

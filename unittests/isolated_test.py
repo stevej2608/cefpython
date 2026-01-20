@@ -43,8 +43,8 @@ class IsolatedTest1(unittest.TestCase):
         self.assertEqual(g_count, 2)
 
 
-@requires_shared_state
 class IsolatedTest2(unittest.TestCase):
+    """This class runs in isolation (forked) to verify globals reset between classes."""
 
     def test_isolated3(self):
         global g_count
