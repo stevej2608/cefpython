@@ -6,6 +6,10 @@
 Test isolated test. Isolated tests are run each using a new instance
 of Python interpreter. They also implement some unique features for
 our use case. See main_test.py for some real tests.
+
+NOTE: These tests require shared global state across test methods within
+a class, so they are incompatible with pytest --forked mode which runs
+each test method in a separate process.
 """
 
 import unittest
@@ -13,10 +17,19 @@ import unittest
 import _test_runner
 from os.path import basename
 
+try:
+    import pytest
+    requires_shared_state = pytest.mark.requires_shared_state
+except ImportError:
+    # Fallback for when pytest is not available
+    def requires_shared_state(cls):
+        return cls
+
 # Globals
 g_count = 0
 
 
+@requires_shared_state
 class IsolatedTest1(unittest.TestCase):
 
     def test_isolated1(self):
@@ -30,6 +43,7 @@ class IsolatedTest1(unittest.TestCase):
         self.assertEqual(g_count, 2)
 
 
+@requires_shared_state
 class IsolatedTest2(unittest.TestCase):
 
     def test_isolated3(self):

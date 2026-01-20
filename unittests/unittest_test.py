@@ -2,9 +2,22 @@
 # All rights reserved. Licensed under BSD 3-clause license.
 # Project website: https://github.com/cztomczak/cefpython
 
-"""Test the unittest itself."""
+"""Test the unittest itself.
+
+NOTE: These tests require shared global state across test methods within
+a class, so they are incompatible with pytest --forked mode which runs
+each test method in a separate process.
+"""
 
 import unittest
+
+try:
+    import pytest
+    requires_shared_state = pytest.mark.requires_shared_state
+except ImportError:
+    # Fallback for when pytest is not available
+    def requires_shared_state(cls):
+        return cls
 
 # Globals
 g_count = 0
@@ -14,6 +27,7 @@ g_setUp_count = 0
 g_tearDown_count = 0
 
 
+@requires_shared_state
 class Test(unittest.TestCase):
     count = 0
 

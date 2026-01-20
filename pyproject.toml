@@ -127,8 +127,7 @@ dependencies = [
 [tool.hatch.envs.default.scripts]
 # Build C++ libraries and Cython extension
 build-cpp = "python tools/build.py 123.0 --fast"
-# Run unit tests
-test = "pytest unittests/ -v"
+
 # Run examples
 example-hello = "python -c 'from cefpython3.examples import hello_world; hello_world.main()'"
 # Clean build artifacts
@@ -196,11 +195,25 @@ complete-with-tests = [
 dependencies = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "pytest-forked>=1.6",
 ]
 
 [tool.hatch.envs.test.scripts]
-run = "pytest unittests/ -v"
-cov = "pytest unittests/ --cov=cefpython3 --cov-report=html --cov-report=term"
+run = "pytest unittests/ -v --forked"
+cov = "pytest unittests/ --cov=cefpython3 --cov-report=html --cov-report=term --forked"
+
+# Configuration for 'hatch test' command
+[tool.hatch.envs.hatch-test]
+extra-dependencies = [
+    "pillow>=9.0",
+    "pytest-forked>=1.6",
+]
+# Override default test path from 'tests' to 'unittests'
+# Use --forked to run each test in a separate process (required for CEF)
+default-args = ["unittests/", "-v", "--forked"]
+
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.11", "3.12", "3.13"]
 
 [tool.cython]
 # Cython compiler directives
