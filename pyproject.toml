@@ -130,8 +130,10 @@ build-cpp = "python tools/build.py 123.0 --fast"
 
 # Run examples
 example-hello = "python -c 'from cefpython3.examples import hello_world; hello_world.main()'"
-# Clean build artifacts
+# Clean build artifacts (minimal)
 clean = "rm -rf build/build_cefpython build/temp.* dist/ *.egg-info && find . -type d -name __pycache__ -delete 2>/dev/null ; find . -type f -name '*.pyc' -delete ; find . -type f -name '*.pyo' -delete"
+# Clean all build artifacts for full rebuild (keeps downloaded CEF binaries in build/cef*)
+clean-build = "rm -rf build/build_cefpython build/cefpython_binary_* build/cefpython3_* build/temp.* build/lib.* dist/ *.egg-info src/client_handler/*.o src/client_handler/*.a src/subprocess/*.o src/subprocess/*.a src/cpp_utils/*.o src/cpp_utils/*.a && find . -type d -name __pycache__ -delete 2>/dev/null ; find . -type f -name '*.pyc' -delete ; find . -type f -name '*.pyo' -delete"
 
 [tool.hatch.envs.build]
 description = "Environment for building the complete package"
@@ -224,6 +226,11 @@ minversion = "7.0"
 testpaths = ["unittests"]
 python_files = ["*_test.py", "test_*.py"]
 addopts = "-ra -q"
+filterwarnings = [
+    # Ignore fork() deprecation warning from pytest-forked on Python 3.12+
+    # This is a third-party library issue, not ours, and tests work fine
+    "ignore:This process .* is multi-threaded, use of fork\\(\\) may lead to deadlocks:DeprecationWarning",
+]
 
 # Hatch metadata
 [tool.hatch.metadata]

@@ -24,7 +24,9 @@ from common import (
     WINDOWS, MAC, LINUX,
     OS_POSTFIX2, CEF_POSTFIX2,
     get_cefpython_version,
-    MODULE_EXT
+    MODULE_EXT,
+    PYVERSION,
+    MODULE_NAME
 )
 
 
@@ -288,20 +290,29 @@ class CefPythonBuildHook(BuildHookInterface):
         # Print tooling report at the start of the build
         self._print_tooling_report()
 
-        # Check if installer package already exists
-        installer_dir = Path(f"build/cefpython3_{self.version}_{OS_POSTFIX2}")
-        if installer_dir.exists():
+        # Include Python version in installer directory to avoid conflicts between
+        # Python versions (each version needs its own cefpython_pyXX.so)
+        installer_dir = Path(f"build/cefpython3_{self.version}_{OS_POSTFIX2}_py{PYVERSION}")
+        module_path = installer_dir / "cefpython3" / MODULE_NAME
+
+        # Check if installer package with correct Python extension exists
+        if installer_dir.exists() and module_path.exists():
             self.app.display_info(f"Installer package already exists at {installer_dir}")
+            self.app.display_info(f"Found {MODULE_NAME} for Python {PYVERSION}")
             self.app.display_info("Skipping build steps, using existing package")
         else:
-            self.app.display_info("Starting CEF Python build process...")
+            if installer_dir.exists():
+                self.app.display_info(f"Installer package exists but missing {MODULE_NAME}")
+                self.app.display_info("Rebuilding for current Python version...")
+            else:
+                self.app.display_info("Starting CEF Python build process...")
             # Note: build_libs_only.py handles both C++ and Cython builds in the correct order
             # It first builds Cython to generate headers, then builds C++ projects
             self._build_cython_extension()
-            self._create_installer_package()
+            self._create_installer_package(installer_dir)
 
         # Configure platform-specific wheel paths
-        self._configure_wheel_paths(build_data)
+        self._configure_wheel_paths(build_data, installer_dir)
 
     def _build_native_libraries(self) -> None:
         """Build all C++ libraries using platform-specific methods."""
@@ -415,12 +426,15 @@ class CefPythonBuildHook(BuildHookInterface):
 
         self.app.display_success("Cython extension built successfully")
 
-    def _create_installer_package(self) -> None:
+    def _create_installer_package(self, installer_dir: Path) -> None:
         """Create the installer package structure."""
         self.app.display_info("Creating installer package...")
 
+        # Pass the target directory name to make_installer.py
+        # The directory name includes Python version for isolation
         result = subprocess.run(
-            [sys.executable, "tools/make_installer.py", self.version],
+            [sys.executable, "tools/make_installer.py", self.version,
+             "--output-dir", str(installer_dir)],
             cwd=str(self.root),
             capture_output=True,
             text=True,
@@ -428,7 +442,8 @@ class CefPythonBuildHook(BuildHookInterface):
 
         if result.returncode != 0:
             self.app.display_error("Failed to create installer package")
-            self.app.display_error(result.stderr)
+            self.app.display_error("STDOUT:\n" + result.stdout)
+            self.app.display_error("STDERR:\n" + result.stderr)
             raise RuntimeError("Installer creation failed")
 
         self.app.display_success("Installer package created successfully")
@@ -438,12 +453,9 @@ class CefPythonBuildHook(BuildHookInterface):
         import sysconfig
         return sysconfig.get_path("include")
 
-    def _configure_wheel_paths(self, build_data: Dict[str, Any]) -> None:
+    def _configure_wheel_paths(self, build_data: Dict[str, Any], installer_dir: Path) -> None:
         """Configure platform-specific paths for wheel building."""
-        # Determine the installer package directory based on platform
-        installer_dir = f"build/cefpython3_{self.version}_{OS_POSTFIX2}"
-
-        self.app.display_info(f"Configuring wheel paths for {OS_POSTFIX2}...")
+        self.app.display_info(f"Configuring wheel paths for {OS_POSTFIX2} Python {PYVERSION}...")
         self.app.display_info(f"Package directory: {installer_dir}")
 
         # Set the force_include paths for the wheel

@@ -290,13 +290,14 @@ if PYTEST_AVAILABLE:
             pytest.skip("No display available for GUI tests")
 
 
+    @pytest.hookimpl(trylast=True)
     def pytest_collection_modifyitems(config, items):
-        """Group tests that require shared state to run together without forking."""
-        if not FORKED_MODE:
-            return
+        """Group tests that require shared state to run together without forking.
 
-        # Reorder items so that requires_shared_state tests from the same class
-        # are grouped together (they'll run without forking via the hook below)
+        Uses trylast=True to run after pytest-randomly has shuffled the tests,
+        so we can restore the correct order for shared-state tests.
+        """
+        # Separate shared state tests from other tests
         shared_state_items = []
         other_items = []
         for item in items:
@@ -305,7 +306,19 @@ if PYTEST_AVAILABLE:
             else:
                 other_items.append(item)
 
-        # Put shared state tests at the end, grouped by class
+        if not shared_state_items:
+            return
+
+        # Sort shared_state tests by class and then by test name to ensure
+        # deterministic execution order (tests within a class must run in order)
+        def sort_key(item):
+            # Sort by: module path, class name, test name
+            cls_name = item.cls.__name__ if item.cls else ""
+            return (item.fspath, cls_name, item.name)
+
+        shared_state_items.sort(key=sort_key)
+
+        # Put shared state tests at the end, grouped and sorted
         items[:] = other_items + shared_state_items
 
 

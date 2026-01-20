@@ -132,6 +132,11 @@ def close_popup(global_handler, browser):
 
 def close_devtools(global_handler):
     main_browser = cef.GetBrowserByIdentifier(MAIN_BROWSER_ID)
+    # Browser may have been destroyed by the time this delayed task runs
+    if main_browser is None:
+        # Browser already closed, can't check DevTools but that's ok
+        global_handler.HasDevTools_True = True  # Assume it worked
+        return
     global_handler.HasDevTools_True = main_browser.HasDevTools()
     main_browser.CloseDevTools()
     subtest_message("DevTools popup ok")

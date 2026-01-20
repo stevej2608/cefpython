@@ -7,13 +7,16 @@ Create setup.py package installer.
 
 Usage:
     make_installer.py VERSION [--wheel] [--python-tag xx] [--universal]
+                              [--output-dir DIR]
 
 Options:
-    VERSION  Version number eg. 50.0
-    --wheel  Generate wheel package.
-             Additional args for the wheel package:
-             --python-tag xx (eg. cp27 - cpython 2.7)
-             --universal (any python 2 or 3)
+    VERSION      Version number eg. 50.0
+    --wheel      Generate wheel package.
+                 Additional args for the wheel package:
+                 --python-tag xx (eg. cp27 - cpython 2.7)
+                 --universal (any python 2 or 3)
+    --output-dir DIR  Override the output directory path.
+                      Default: build/cefpython3_{VERSION}_{OS_POSTFIX2}
 """
 
 from common import *
@@ -30,6 +33,7 @@ import sysconfig
 VERSION = ""
 WHEEL = False
 WHEEL_ARGS = list()
+OUTPUT_DIR = ""  # Optional override for output directory
 
 # Globals
 SETUP_DIR = ""
@@ -53,8 +57,15 @@ def main():
 
     # Setup and package directories
     global SETUP_DIR, PKG_DIR
-    setup_dir_name = get_setup_installer_basename(VERSION, OS_POSTFIX2)
-    SETUP_DIR = os.path.join(BUILD_DIR, setup_dir_name)
+    if OUTPUT_DIR:
+        # Use the specified output directory (may include Python version)
+        SETUP_DIR = OUTPUT_DIR
+        if not os.path.isabs(SETUP_DIR):
+            SETUP_DIR = os.path.join(ROOT_DIR, SETUP_DIR)
+    else:
+        # Use default naming
+        setup_dir_name = get_setup_installer_basename(VERSION, OS_POSTFIX2)
+        SETUP_DIR = os.path.join(BUILD_DIR, setup_dir_name)
     PKG_DIR = os.path.join(SETUP_DIR, "cefpython3")
 
     # Print src and dest for file operations
@@ -132,19 +143,32 @@ def main():
 
 
 def command_line_args():
-    global VERSION, WHEEL, WHEEL_ARGS
+    global VERSION, WHEEL, WHEEL_ARGS, OUTPUT_DIR
     VERSION = get_version_from_command_line_args(__file__)
     if not VERSION:
         print(__doc__)
         sys.exit(1)
-    for arg in sys.argv:
+    i = 1
+    while i < len(sys.argv):
+        arg = sys.argv[i]
         if arg == VERSION:
+            i += 1
             continue
         if arg == "--wheel":
             WHEEL = True
+            i += 1
             continue
+        if arg == "--output-dir":
+            if i + 1 < len(sys.argv):
+                OUTPUT_DIR = sys.argv[i + 1]
+                i += 2
+                continue
+            else:
+                print("ERROR: --output-dir requires a directory path")
+                sys.exit(1)
         if WHEEL:
             WHEEL_ARGS.append(arg)
+        i += 1
     if WHEEL and not len(WHEEL_ARGS):
         print("ERROR: wheel requires additional args eg. --universal")
         sys.exit(1)
