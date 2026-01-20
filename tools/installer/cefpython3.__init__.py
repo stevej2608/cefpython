@@ -99,7 +99,8 @@ def _patched_Initialize(settings=None, switches=None):
     if 'locales_dir_path' not in settings:
         settings['locales_dir_path'] = os.path.join(package_dir, 'locales')
     if 'browser_subprocess_path' not in settings:
-        settings['browser_subprocess_path'] = os.path.join(package_dir, 'subprocess')
+        subprocess_name = 'subprocess.exe' if platform.system() == 'Windows' else 'subprocess'
+        settings['browser_subprocess_path'] = os.path.join(package_dir, subprocess_name)
 
     return _original_Initialize(settings, switches)
 
