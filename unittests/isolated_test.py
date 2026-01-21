@@ -7,15 +7,19 @@ Test isolated test. Isolated tests are run each using a new instance
 of Python interpreter. They also implement some unique features for
 our use case. See main_test.py for some real tests.
 
-NOTE: These tests require shared global state across test methods within
-a class, so they are incompatible with pytest --forked mode which runs
-each test method in a separate process.
+This module demonstrates cross-platform process isolation:
+- IsolatedTest1: Tests that share global state (run in same process)
+- IsolatedTest2: Tests that need fresh state (run in isolated subprocess)
+
+The isolation works on all platforms (Windows, Linux, macOS) using the
+_process_isolation facade which uses fork() on Unix and subprocess on Windows.
 """
 
 import unittest
 # noinspection PyUnresolvedReferences
 import _test_runner
 from os.path import basename
+from _process_isolation import IsolatedTestCase
 
 try:
     import pytest
@@ -31,6 +35,7 @@ g_count = 0
 
 @requires_shared_state
 class IsolatedTest1(unittest.TestCase):
+    """Tests that share global state across methods (run in same process)."""
 
     def test_isolated1(self):
         global g_count
@@ -43,8 +48,12 @@ class IsolatedTest1(unittest.TestCase):
         self.assertEqual(g_count, 2)
 
 
-class IsolatedTest2(unittest.TestCase):
-    """This class runs in isolation (forked) to verify globals reset between classes."""
+class IsolatedTest2(IsolatedTestCase):
+    """Tests that need process isolation (run in isolated subprocess).
+
+    Using IsolatedTestCase base class ensures each test runs in a fresh
+    process with reset globals, working on all platforms including Windows.
+    """
 
     def test_isolated3(self):
         global g_count

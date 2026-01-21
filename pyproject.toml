@@ -210,9 +210,9 @@ extra-dependencies = [
     "pillow>=9.0",
     "pytest-forked>=1.6",
 ]
-# Override default test path from 'tests' to 'unittests'
-# Note: --forked is added conditionally by conftest.py on Linux/Mac only
-# (Windows doesn't have os.fork(), so tests run in separate subprocesses there)
+# CEF can only be initialized once per process. Test isolation is handled by:
+# - Linux/Mac: pytest-forked (automatically enabled by conftest.py)
+# - Windows: subprocess-based isolation (handled by conftest.py)
 default-args = ["unittests/", "-v"]
 
 [[tool.hatch.envs.hatch-test.matrix]]

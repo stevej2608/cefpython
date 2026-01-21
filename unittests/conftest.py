@@ -234,11 +234,10 @@ if PYTEST_AVAILABLE:
 
     # Pytest markers and configuration
     def pytest_configure(config):
-        """Register custom markers and configure platform-specific test isolation."""
+        """Register custom markers and enable forked mode on Unix."""
         global FORKED_MODE
 
-        # On Unix systems, automatically enable --forked for CEF test isolation
-        # On Windows, os.fork() doesn't exist, so we handle isolation differently
+        # On Unix, automatically enable --forked for CEF test isolation
         if platform.system() != 'Windows':
             if hasattr(config.option, 'forked'):
                 config.option.forked = True
@@ -259,10 +258,6 @@ if PYTEST_AVAILABLE:
         config.addinivalue_line(
             "markers",
             "requires_shared_state: mark test as requiring shared state across test methods (incompatible with --forked)"
-        )
-        config.addinivalue_line(
-            "markers",
-            "cef_isolated: mark test as requiring CEF process isolation (auto-handled on Windows)"
         )
 
 
@@ -301,11 +296,18 @@ if PYTEST_AVAILABLE:
             pytest.skip("No display available for GUI tests")
 
 
-    # Windows CEF test isolation via subprocess
-    # Track which test files have been run in subprocess to avoid re-running
-    _windows_subprocess_completed = {}  # fpath -> returncode
-    _windows_in_subprocess = os.environ.get('_CEF_SUBPROCESS_TEST') == '1'
-    _windows_cef_test_items = set()  # Track items that were run in subprocess
+    # ==========================================================================
+    # Cross-platform CEF test isolation using subprocess
+    # ==========================================================================
+    # CEF can only be initialized once per process. On Linux/Mac, we use
+    # pytest-forked to run each test in a forked process. On Windows (which
+    # lacks os.fork()), we run each CEF test file in a separate subprocess.
+    # ==========================================================================
+
+    # Track subprocess results for Windows
+    _subprocess_results = {}  # fpath -> returncode
+    _subprocess_test_items = set()  # nodeids of tests run in subprocess
+    _in_subprocess = os.environ.get('_CEF_SUBPROCESS_TEST') == '1'
 
     # CEF test files that need process isolation
     CEF_TEST_FILES = {
@@ -314,44 +316,43 @@ if PYTEST_AVAILABLE:
         'osr_test.py',
     }
 
-    # Tests that require forked mode (skip on Windows)
-    FORKED_ONLY_FILES = {
-        'isolated_test.py',
-    }
+    # Tests that specifically require os.fork() (skip on Windows)
+    # Note: isolated_test.py now uses the cross-platform _process_isolation facade
+    FORK_SPECIFIC_FILES = set()  # Currently none - all tests are cross-platform
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_collection_modifyitems(config, items):
-        """Handle Windows CEF test isolation and skip forked-only tests."""
+        """Handle CEF test isolation: use subprocess on Windows, forked on Unix."""
+        # On Unix with --forked, let pytest-forked handle isolation
         if platform.system() != 'Windows':
-            # On Unix, let pytest-forked handle isolation
-            # Still need to handle shared state tests
             _handle_shared_state_tests(items)
             return
 
-        if _windows_in_subprocess:
-            # We're in a subprocess, run normally
+        # In a subprocess, just run tests normally
+        if _in_subprocess:
             return
 
-        # On Windows main process: separate CEF tests for subprocess execution
+        # On Windows: run CEF tests in separate subprocesses
+        import subprocess as sp
+
         cef_items = []
         other_items = []
         skipped_items = []
 
         for item in items:
             filename = os.path.basename(str(item.fspath))
-            if filename in FORKED_ONLY_FILES:
-                # Skip tests that require os.fork()
+            if filename in FORK_SPECIFIC_FILES:
                 item.add_marker(pytest.mark.skip(
                     reason="Test requires os.fork() which is not available on Windows"
                 ))
                 skipped_items.append(item)
             elif filename in CEF_TEST_FILES:
                 cef_items.append(item)
-                _windows_cef_test_items.add(item.nodeid)
+                _subprocess_test_items.add(item.nodeid)
             else:
                 other_items.append(item)
 
-        # Group CEF items by file
+        # Group CEF tests by file and run each file in a subprocess
         cef_files = {}
         for item in cef_items:
             fpath = str(item.fspath)
@@ -359,13 +360,10 @@ if PYTEST_AVAILABLE:
                 cef_files[fpath] = []
             cef_files[fpath].append(item)
 
-        # Run each CEF test file in a subprocess
-        import subprocess as sp
-        for fpath, file_items in cef_files.items():
-            if fpath in _windows_subprocess_completed:
+        for fpath in cef_files:
+            if fpath in _subprocess_results:
                 continue
 
-            # Run this test file in a subprocess
             env = os.environ.copy()
             env['_CEF_SUBPROCESS_TEST'] = '1'
 
@@ -374,44 +372,36 @@ if PYTEST_AVAILABLE:
                 env=env,
                 cwd=PROJECT_ROOT
             )
+            _subprocess_results[fpath] = result.returncode
 
-            _windows_subprocess_completed[fpath] = result.returncode
-
-        # Reorder: other items first, then CEF items, then forked-only skipped
+        # Reorder items
         items[:] = other_items + cef_items + skipped_items
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_runtest_protocol(item, nextitem):
-        """For Windows CEF tests, report pass/fail based on subprocess result.
-
-        This hook completely takes over test execution for CEF tests that were
-        already run in subprocess, reporting their results without re-running.
-        """
-        # First check for requires_shared_state (existing logic)
+        """Report subprocess results for Windows CEF tests."""
+        # Handle shared state tests on Unix with --forked
         if FORKED_MODE and "requires_shared_state" in item.keywords:
             from _pytest.runner import runtestprotocol
             runtestprotocol(item, nextitem=nextitem)
             return True
 
-        # Handle Windows CEF subprocess tests
-        if platform.system() != 'Windows' or _windows_in_subprocess:
-            return None  # Let normal execution happen
+        # Skip if not Windows or if we're in a subprocess
+        if platform.system() != 'Windows' or _in_subprocess:
+            return None
 
-        if item.nodeid not in _windows_cef_test_items:
-            return None  # Not a CEF test, run normally
+        # Skip if not a CEF test we ran in subprocess
+        if item.nodeid not in _subprocess_test_items:
+            return None
 
-        # This test was run in subprocess - report result without running
-        from _pytest.runner import CallInfo, TestReport
-        from _pytest import timing
+        # Report result from subprocess
+        from _pytest.runner import TestReport
 
         fpath = str(item.fspath)
-        returncode = _windows_subprocess_completed.get(fpath, 1)
+        returncode = _subprocess_results.get(fpath, 1)
 
-        # Create reports for setup, call, and teardown phases
-        reports = []
-
-        # Setup report (always passes for subprocess tests)
-        setup_report = TestReport(
+        # Setup report
+        item.ihook.pytest_runtest_logreport(report=TestReport(
             nodeid=item.nodeid,
             location=item.location,
             keywords=dict(item.keywords),
@@ -419,36 +409,26 @@ if PYTEST_AVAILABLE:
             longrepr=None,
             when="setup",
             duration=0.0,
-        )
-        reports.append(setup_report)
-        item.ihook.pytest_runtest_logreport(report=setup_report)
+        ))
 
-        # Call report (pass or fail based on subprocess result)
+        # Call report (pass/fail based on subprocess)
         if returncode == 0:
-            call_report = TestReport(
-                nodeid=item.nodeid,
-                location=item.location,
-                keywords=dict(item.keywords),
-                outcome="passed",
-                longrepr=None,
-                when="call",
-                duration=0.0,
-            )
+            outcome, longrepr = "passed", None
         else:
-            call_report = TestReport(
-                nodeid=item.nodeid,
-                location=item.location,
-                keywords=dict(item.keywords),
-                outcome="failed",
-                longrepr=f"Test failed in subprocess (exit code {returncode})",
-                when="call",
-                duration=0.0,
-            )
-        reports.append(call_report)
-        item.ihook.pytest_runtest_logreport(report=call_report)
+            outcome, longrepr = "failed", f"Test failed in subprocess (exit code {returncode})"
 
-        # Teardown report (always passes for subprocess tests)
-        teardown_report = TestReport(
+        item.ihook.pytest_runtest_logreport(report=TestReport(
+            nodeid=item.nodeid,
+            location=item.location,
+            keywords=dict(item.keywords),
+            outcome=outcome,
+            longrepr=longrepr,
+            when="call",
+            duration=0.0,
+        ))
+
+        # Teardown report
+        item.ihook.pytest_runtest_logreport(report=TestReport(
             nodeid=item.nodeid,
             location=item.location,
             keywords=dict(item.keywords),
@@ -456,14 +436,12 @@ if PYTEST_AVAILABLE:
             longrepr=None,
             when="teardown",
             duration=0.0,
-        )
-        reports.append(teardown_report)
-        item.ihook.pytest_runtest_logreport(report=teardown_report)
+        ))
 
-        return True  # We handled this test
+        return True
 
     def _handle_shared_state_tests(items):
-        """Group tests that require shared state to run together without forking."""
+        """Group tests that require shared state to run together."""
         shared_state_items = []
         other_items = []
         for item in items:
